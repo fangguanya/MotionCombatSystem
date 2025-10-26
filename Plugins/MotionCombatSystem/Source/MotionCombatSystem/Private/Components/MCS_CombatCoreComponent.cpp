@@ -52,12 +52,6 @@ void UMCS_CombatCoreComponent::BeginPlay()
         TargetingSubsystem = World->GetSubsystem<UMCS_TargetingSubsystem>();
     }
 
-    // // Ensure chooser exists
-    // if (!AttackChooser)
-    // {
-    //     AttackChooser = NewObject<UMCS_AttackChooser>(this, UMCS_AttackChooser::StaticClass());
-    // }
-
     // If no active set defined but map has entries, activate the first
     if (!ActiveAttackSetTag.IsValid() && AttackSets.Num() > 0)
     {
@@ -73,6 +67,24 @@ void UMCS_CombatCoreComponent::BeginPlay()
 
 }
 
+// Called when the game ends
+void UMCS_CombatCoreComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // Unbind from targeting updates
+    if (TargetingSubsystem)
+    {
+        TargetingSubsystem->OnTargetsUpdated.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleTargetsUpdated);
+    }
+
+    // Unbind all notifies
+    UnbindAllNotifies();
+
+    // Clear chooser pool
+    ClearChooserPool();
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void UMCS_CombatCoreComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -86,12 +98,9 @@ void UMCS_CombatCoreComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 */
 void UMCS_CombatCoreComponent::PerformAttack(EMCS_AttackType DesiredType, EMCS_AttackDirection DesiredDirection, const FMCS_AttackSituation& CurrentSituation)
 {
-    if (!CurrentAttack.HasValidMontage())
+    if (!SelectAttack(DesiredType, DesiredDirection, CurrentSituation))
     {
-        if (!SelectAttack(DesiredType, DesiredDirection, CurrentSituation))
-        {
-            return;
-        }
+        return;
     }
 
     ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner());
@@ -164,52 +173,95 @@ bool UMCS_CombatCoreComponent::SelectAttack(EMCS_AttackType DesiredType, EMCS_At
     const FMCS_AttackSetData* ActiveSet = AttackSets.Find(ActiveAttackSetTag);
     if (!ActiveSet || !ActiveSet->AttackChooser)
     {
-        // UE_LOG(LogTemp, Error, TEXT("[CombatCore] No valid attack set or chooser for active tag: %s"), *ActiveAttackSetTag.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("[CombatCore] Invalid or missing AttackChooser for set: %s"), *ActiveAttackSetTag.ToString());
         return false;
     }
 
-    UMCS_AttackChooser* Chooser = ActiveSet->AttackChooser;
     AActor* OwnerActor = GetOwnerActor();
-    if (!OwnerActor) return false;
-
-    // Filter by type
-    TArray<FMCS_AttackEntry> FilteredEntries;
-    for (const FMCS_AttackEntry& Entry : Chooser->AttackEntries)
+    if (!OwnerActor)
     {
-        if (Entry.AttackType == DesiredType)
+        UE_LOG(LogTemp, Warning, TEXT("[CombatCore] Invalid OwnerActor in SelectAttack."));
+        return false;
+    }
+
+    //----------------------------------------
+    // 1. Gather filtered entries by DesiredType
+    //----------------------------------------
+    TArray<FMCS_AttackEntry> FilteredEntries;
+
+    if (ActiveSet->AttackDataTable)
+    {
+        TArray<FMCS_AttackEntry*> Rows;
+        ActiveSet->AttackDataTable->GetAllRows(TEXT("SelectAttack"), Rows);
+
+        for (const FMCS_AttackEntry* Row : Rows)
         {
-            FilteredEntries.Add(Entry);
+            if (Row && Row->AttackType == DesiredType)
+            {
+                FilteredEntries.Add(*Row);
+            }
         }
     }
 
     if (FilteredEntries.IsEmpty())
     {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatCore] No valid attacks found for DesiredType: %s in set: %s"),
+            *UEnum::GetValueAsString(DesiredType), *ActiveAttackSetTag.ToString());
         return false;
     }
 
-    // Gather targets
+    //----------------------------------------
+    // 2. Get a chooser instance from the pool. (Memory optimization)
+    //----------------------------------------
+    UMCS_AttackChooser* TempChooser = GetPooledChooser(ActiveSet->AttackChooser->GetClass());
+    TempChooser->AttackEntries = FilteredEntries;
+
+
+    //----------------------------------------
+    // 3. Gather valid targets
+    //----------------------------------------
     TArray<AActor*> Targets;
     if (TargetingSubsystem)
     {
         for (const FMCS_TargetInfo& Info : TargetingSubsystem->GetAllTargets())
+        {
             if (IsValid(Info.TargetActor))
+            {
                 Targets.Add(Info.TargetActor);
+            }
+        }
     }
 
-    // Cache current situation
+    //----------------------------------------
+    // 4. Cache situation
+    //----------------------------------------
     PlayerSituation = CurrentSituation;
 
-    // Choose attack
+    //----------------------------------------
+    // 5. Choose the best attack
+    //----------------------------------------
     FMCS_AttackEntry ChosenAttack;
-    const TArray<FMCS_AttackEntry> OriginalEntries = Chooser->AttackEntries;
-    Chooser->AttackEntries = FilteredEntries;
+    const bool bSuccess = TempChooser->ChooseAttack(OwnerActor, Targets, DesiredDirection, CurrentSituation, ChosenAttack);
 
-    const bool bSuccess = Chooser->ChooseAttack(OwnerActor, Targets, DesiredDirection, CurrentSituation, ChosenAttack);
-    Chooser->AttackEntries = OriginalEntries;
+    // Always log attempts for visibility
+    UE_LOG(LogTemp, Log, TEXT("[CombatCore] Attempted Attack Selection: Type=%s | Direction=%s | Success=%s"),
+        *UEnum::GetValueAsString(DesiredType),
+        *UEnum::GetValueAsString(DesiredDirection),
+        bSuccess ? TEXT("True") : TEXT("False"));
 
     if (bSuccess)
     {
         CurrentAttack = ChosenAttack;
+        UE_LOG(LogTemp, Log, TEXT("[CombatCore] Selected Attack: %s | Type=%s | Range %.0f-%.0f"),
+            *CurrentAttack.AttackName.ToString(),
+            *UEnum::GetValueAsString(CurrentAttack.AttackType),
+            CurrentAttack.RangeStart,
+            CurrentAttack.RangeEnd);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatCore] No valid attack chosen for type: %s"),
+            *UEnum::GetValueAsString(DesiredType));
     }
 
     return bSuccess;
@@ -402,147 +454,114 @@ void UMCS_CombatCoreComponent::BindNotifiesForMontage(UAnimMontage* Montage)
 
     for (const FAnimNotifyEvent& Event : Montage->Notifies)
     {
-        if (Event.NotifyStateClass && Event.NotifyStateClass->GetClass()->IsChildOf(UAnimNotifyState_MCSHitboxWindow::StaticClass()))
+        if (Event.NotifyStateClass && Event.NotifyStateClass->GetClass()->IsChildOf(UAnimNotifyState_MCSWindow::StaticClass()))
         {
-            if (UAnimNotifyState_MCSHitboxWindow* Notify = Cast<UAnimNotifyState_MCSHitboxWindow>(Event.NotifyStateClass))
-            {
-                // Avoid duplicate binds
-                // Notify->OnNotifyBegin.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyBegin);
-                // Notify->OnNotifyEnd.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyEnd);
+            UAnimNotifyState_MCSWindow* Notify = Cast<UAnimNotifyState_MCSWindow>(Event.NotifyStateClass);
+            if (Notify == nullptr) continue;
 
-                // Bind to hitbox notify events
-                Notify->OnNotifyBegin.AddDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyBegin);
-                Notify->OnNotifyEnd.AddDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyEnd);
+            // Bind to notify events. The type will be determined in the handler.
+            Notify->OnNotifyBegin.AddDynamic(this, &UMCS_CombatCoreComponent::HandleMCSNotifyBegin);
+            Notify->OnNotifyEnd.AddDynamic(this, &UMCS_CombatCoreComponent::HandleMCSNotifyEnd);
 
-                BoundHitboxNotifies.Add(Notify);
-            }
-        }
-        else if (Event.NotifyStateClass && Event.NotifyStateClass->GetClass()->IsChildOf(UAnimNotifyState_MCSComboWindow::StaticClass()))
-        {
-            if (UAnimNotifyState_MCSComboWindow* Notify = Cast<UAnimNotifyState_MCSComboWindow>(Event.NotifyStateClass))
-            {
-                // Bind to combo notify events
-                Notify->OnNotifyBegin.AddDynamic(this, &UMCS_CombatCoreComponent::HandleComboNotifyBegin);
-                Notify->OnNotifyEnd.AddDynamic(this, &UMCS_CombatCoreComponent::HandleComboNotifyEnd);
-
-                BoundComboNotifies.Add(Notify);
-            }
+            BoundMCSNotifies.Add(Notify); // Keep track of bound notifies
         }
     }
-
-    // UE_LOG(LogTemp, Log, TEXT("[CombatCore] Bound to %d hitbox notifies on montage %s"), BoundHitboxNotifies.Num(), *Montage->GetName());
 }
 
 void UMCS_CombatCoreComponent::UnbindAllNotifies()
 {
-    if (BoundHitboxNotifies.Num() == 0 && BoundComboNotifies.Num() == 0) return;
+    if (BoundMCSNotifies.Num() == 0) return;
 
     // Unbind all hitbox notify events
-    for (UAnimNotifyState_MCSHitboxWindow* NotifyCDO1 : BoundHitboxNotifies)
+    for (UAnimNotifyState_MCSWindow* NotifyCDO1 : BoundMCSNotifies)
     {
         if (NotifyCDO1)
         {
-            NotifyCDO1->OnNotifyBegin.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyBegin);
-            NotifyCDO1->OnNotifyEnd.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleHitboxNotifyEnd);
-        }
-    }
-
-    // Unbind all combo notify events
-    for (UAnimNotifyState_MCSComboWindow* NotifyCDO2 : BoundComboNotifies)
-    {
-        if (NotifyCDO2)
-        {
-            NotifyCDO2->OnNotifyBegin.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleComboNotifyBegin);
-            NotifyCDO2->OnNotifyEnd.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleComboNotifyEnd);
+            NotifyCDO1->OnNotifyBegin.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleMCSNotifyBegin);
+            NotifyCDO1->OnNotifyEnd.RemoveDynamic(this, &UMCS_CombatCoreComponent::HandleMCSNotifyEnd);
         }
     }
 
     // Clear the lists
-    BoundHitboxNotifies.Reset();
-    BoundComboNotifies.Reset();
+    BoundMCSNotifies.Reset();
 }
 
-void UMCS_CombatCoreComponent::HandleHitboxNotifyBegin(FMCS_AttackHitbox& Hitbox)
+void UMCS_CombatCoreComponent::HandleMCSNotifyBegin(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify)
 {
+    // Validate the notify instance
+    if (!Notify) return;
+
     // 🛡️ Guard: only run if this character is actively playing this montage
     if (const ACharacter* C = Cast<ACharacter>(GetOwner());
         !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
             C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage)))
         return;
 
-    if (!CachedHitboxComp)
+    switch (EventType)
     {
-        if (ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner()))
-        {
-            CachedHitboxComp = CharacterOwner->FindComponentByClass<UMCS_CombatHitboxComponent>();
-        }
+        case EMCS_AnimEventType::HitboxWindow:
+            // Get and/or cache the hitbox component
+            if (!CachedHitboxComp)
+            {
+                if (ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner()))
+                    CachedHitboxComp = CharacterOwner->FindComponentByClass<UMCS_CombatHitboxComponent>();
+            }
+            if (!CachedHitboxComp) return;
+
+            // Automatically reset hit tracking whenever a new hitbox window begins
+            CachedHitboxComp->ResetAlreadyHit();
+
+            // Start hit detection for this hitbox
+            CachedHitboxComp->StartHitDetection(CurrentAttack, Notify->Hitbox);
+
+            break;
+
+        case EMCS_AnimEventType::ComboWindow:
+            // Mark combo window as active
+            bIsComboWindowOpen = true;
+
+            // Load the allowed next attacks for this attack
+            AllowedComboNames = CurrentAttack.AllowedNextAttacks;
+            bCanContinueCombo = AllowedComboNames.Num() > 0;
+
+            // Fire the combo begin event
+            OnComboWindowBegin.Broadcast();
+            
+            break;
     }
-    if (!CachedHitboxComp) return;
-
-    // ✅ Automatically reset hit tracking whenever a new hitbox window begins
-    CachedHitboxComp->ResetAlreadyHit();
-
-    // Start hit detection for this hitbox
-    CachedHitboxComp->StartHitDetection(CurrentAttack, Hitbox);
-
-    // UE_LOG(LogTemp, Log, TEXT("[CombatCore] Hitbox BEGIN (Start:%s End:%s R:%.1f)"), *Hitbox.StartSocket.ToString(), *Hitbox.EndSocket.ToString(), Hitbox.Radius);
 }
 
-void UMCS_CombatCoreComponent::HandleHitboxNotifyEnd(FMCS_AttackHitbox& Hitbox)
+void UMCS_CombatCoreComponent::HandleMCSNotifyEnd(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify)
 {
+    // Validate the notify instance
+    if (!Notify) return;
+
+    // 🛡️ Guard: only run if this character is actively playing this montage
     if (const ACharacter* C = Cast<ACharacter>(GetOwner());
         !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
             C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage)))
-    {
         return;
-    }
 
-    if (CachedHitboxComp)
+    switch (EventType)
     {
-        CachedHitboxComp->StopHitDetection();
-        // UE_LOG(LogTemp, Log, TEXT("[CombatCore] Hitbox END (Label:%s)"), *Hitbox.StartSocket.ToString());
-    }
-}
+        case EMCS_AnimEventType::HitboxWindow:
+            // Stop hit detection for this hitbox
+            if (CachedHitboxComp)
+                CachedHitboxComp->StopHitDetection();
+            break;
 
-void UMCS_CombatCoreComponent::HandleComboNotifyBegin()
-{
-    // Guard: only run if this character is actively playing this montage
-    if (const ACharacter* C = Cast<ACharacter>(GetOwner());
-        !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
-            C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage))) return;
+        case EMCS_AnimEventType::ComboWindow:
+            // Close combo window
+            bIsComboWindowOpen = false;
 
-    // Mark combo window as active
-    bIsComboWindowOpen = true;
+            // Fire the combo end event
+            OnComboWindowEnd.Broadcast();
 
-    // Load the allowed next attacks for this attack
-    AllowedComboNames = CurrentAttack.AllowedNextAttacks;
-    bCanContinueCombo = AllowedComboNames.Num() > 0;
-
-    // UE_LOG(LogTemp, Log, TEXT("[CombatCore] Combo Window BEGIN — %d allowed next attacks."), AllowedComboNames.Num());
-
-    // Fire the combo begin event
-    OnComboWindowBegin.Broadcast();
-}
-
-void UMCS_CombatCoreComponent::HandleComboNotifyEnd()
-{
-    // Guard: only run if this character is actively playing this montage
-    if (const ACharacter* C = Cast<ACharacter>(GetOwner());
-        !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
-            C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage))) return;
-
-    // Close combo window
-    bIsComboWindowOpen = false;
-
-    // UE_LOG(LogTemp, Log, TEXT("[CombatCore] Combo Window END."));
-
-    // Fire the combo end event
-    OnComboWindowEnd.Broadcast();
-
-    // If combo was open but no input triggered next attack, reset
-    if (!bCanContinueCombo)
-    {
-        AllowedComboNames.Reset();
+            // If combo was open but no input triggered next attack, reset
+            if (!bCanContinueCombo)
+                AllowedComboNames.Reset();
+            
+            break;
     }
 }
 
@@ -638,6 +657,28 @@ void UMCS_CombatCoreComponent::UpdatePlayerSituation(float DeltaTime)
     PlayerSituation.Stamina = 100.f;
     PlayerSituation.HealthPercent = 100.f;
 }
+
+UMCS_AttackChooser* UMCS_CombatCoreComponent::GetPooledChooser(TSubclassOf<UMCS_AttackChooser> ChooserClass)
+{
+    // Try to find an existing valid chooser of the same class
+    for (UMCS_AttackChooser* Existing : ChooserPool)
+    {
+        if (IsValid(Existing) && Existing->GetClass() == ChooserClass)
+        {
+            // Reset entries to ensure a clean state before reuse
+            Existing->AttackEntries.Reset();
+            return Existing;
+        }
+    }
+
+    // None found — create a new one and add to pool
+    UMCS_AttackChooser* NewChooser = NewObject<UMCS_AttackChooser>(this, ChooserClass);
+    ChooserPool.Add(NewChooser);
+
+    UE_LOG(LogTemp, Verbose, TEXT("[CombatCore] Added new chooser instance to pool: %s"), *ChooserClass->GetName());
+    return NewChooser;
+}
+
 
 #if WITH_EDITORONLY_DATA
 /**

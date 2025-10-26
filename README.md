@@ -1,5 +1,5 @@
 # Motion Combat System (MCS)
-Motion Combat System (MCS) is a modular, data-driven melee combat framework for Unreal Engine 5.6+, inspired by the Motion Matching system. 
+Motion Combat System (MCS) is a modular, data-driven melee combat framework for Unreal Engine 5.6+, inspired by Epic's Motion Matching Plugin. 
 
 Instead of hardcoding combos or animation chains, MCS leverages data tables, targeting subsystems, and a customizable chooser to dynamically select the most suitable attack at runtime — based on player intent, enemy proximity, and combat context. 
 

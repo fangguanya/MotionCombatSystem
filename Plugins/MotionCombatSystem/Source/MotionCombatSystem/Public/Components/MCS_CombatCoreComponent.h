@@ -27,10 +27,10 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include <Structs/MCS_AttackEntry.h>
 #include <Structs/MCS_AttackSetData.h>
+#include <Structs/MCS_AttackHitbox.h>
 #include <SubSystems/MCS_TargetingSubsystem.h>
 #include <Choosers/MCS_AttackChooser.h>
-#include <AnimNotifyStates/AnimNotifyState_MCSHitboxWindow.h>
-#include <AnimNotifyStates/AnimNotifyState_MCSComboWindow.h>
+#include <AnimNotifyStates/AnimNotifyState_MCSWindow.h>
 #include <Components/MCS_CombatHitboxComponent.h>
 #include "MCS_CombatCoreComponent.generated.h"
 
@@ -156,6 +156,8 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     /** Update PlayerSituation each frame */
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -192,11 +194,7 @@ private:
 
     // Keep track of which notify CDOs we’ve bound so we can unbind safely
     UPROPERTY()
-    TArray<TObjectPtr<UAnimNotifyState_MCSHitboxWindow>> BoundHitboxNotifies;
-
-    // Keep track of which combo notify CDOs we’ve bound so we can unbind safely
-    UPROPERTY()
-    TArray<TObjectPtr<UAnimNotifyState_MCSComboWindow>> BoundComboNotifies;
+    TArray<TObjectPtr<UAnimNotifyState_MCSWindow>> BoundMCSNotifies;
 
     /** Whether the player is inside an active combo window (set by AnimNotify) */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MCS|Core|Combo", meta = (AllowPrivateAccess = "true"))
@@ -209,6 +207,10 @@ private:
     /** Names of attacks that can follow the current one (populated from AllowedNextAttacks) */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MCS|Core|Combo", meta = (AllowPrivateAccess = "true"))
     TArray<FName> AllowedComboNames;
+
+    /** Pool of reusable chooser instances to avoid allocations every selection */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UMCS_AttackChooser>> ChooserPool;
 
     /*
      * Functions
@@ -224,13 +226,25 @@ private:
 
     // Callback targets for notify broadcasts
     UFUNCTION()
-    void HandleHitboxNotifyBegin(FMCS_AttackHitbox& Hitbox);
+    void HandleMCSNotifyBegin(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify);
     UFUNCTION()
-    void HandleHitboxNotifyEnd(FMCS_AttackHitbox& Hitbox);
+    void HandleMCSNotifyEnd(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify);
 
-    // Callback targets for combo notify broadcasts
-    UFUNCTION()
-    void HandleComboNotifyBegin();
-    UFUNCTION()
-    void HandleComboNotifyEnd();
+    /** Gets a reusable chooser instance or creates a new one if needed */
+    UMCS_AttackChooser* GetPooledChooser(TSubclassOf<UMCS_AttackChooser> ChooserClass);
+
+    /** Cleans up invalid chooser instances from the pool */
+    void ClearChooserPool()
+    {
+        for (int32 i = ChooserPool.Num() - 1; i >= 0; --i)
+        {
+            UMCS_AttackChooser* Chooser = ChooserPool[i];
+
+            // IsValid() handles nullptr and pending kill checks automatically
+            if (!IsValid(Chooser))
+            {
+                ChooserPool.RemoveAt(i);
+            }
+        }
+    }
 };

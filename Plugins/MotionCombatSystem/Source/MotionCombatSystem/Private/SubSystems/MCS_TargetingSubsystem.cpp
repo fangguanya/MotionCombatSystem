@@ -236,12 +236,12 @@ void UMCS_TargetingSubsystem::ScanForTargets()
         if (Actor == UGameplayStatics::GetPlayerPawn(World, 0))
             continue;
 
-        // Must implement the MCS combat target interface
-        if (!Actor->Implements<UMCS_CombatTargetInterface>())
+        // Must implement the MCS combat character interface
+        if (!Actor->Implements<UMCS_CombatCharacterInterface>())
             continue;
 
         // Ask the actor if it can currently be targeted
-        if (!IMCS_CombatTargetInterface::Execute_CanBeTargeted(Actor))
+        if (!IMCS_CombatCharacterInterface::Execute_CanBeTargeted(Actor))
             continue;
 
         const float Distance = FVector::Dist(PlayerLocation, Actor->GetActorLocation());

@@ -29,7 +29,7 @@ struct MOTIONCOMBATSYSTEM_API FMCS_AttackSetData
 public:
 
     /** DataTable containing the attack entries for this set */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|Combat", meta = (DisplayName = "Attack Data Table", Description = "DataTable containing the attack entries for this set"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|Combat", meta = (DisplayName = "Attack Data Table", Description = "DataTable containing the attack entries for this set", RowType = "FMCS_AttackEntry"))
     TObjectPtr<UDataTable> AttackDataTable = nullptr;
 
     /** Attack chooser used for this set */

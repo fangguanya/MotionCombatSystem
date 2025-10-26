@@ -87,8 +87,18 @@ void UMCS_CombatHitboxComponent::PerformSweep()
         const FVector StepStart = FMath::Lerp(PrevStartLoc, CurrStart, Alpha);
         const FVector StepEnd = FMath::Lerp(PrevEndLoc, CurrEnd, Alpha);
 
-        FCollisionQueryParams Params(SCENE_QUERY_STAT(PGAS_Hitbox), false, GetOwner()); // Setup collision parameters
-        TArray<FHitResult> Hits; // Array to store hit results
+        // Setup collision parameters
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(MCS_Hitbox), false, GetOwner());
+        Params.bReturnPhysicalMaterial = false;
+        Params.bReturnFaceIndex = false;
+        Params.bTraceComplex = true;
+
+        FCollisionObjectQueryParams ObjParams;
+        ObjParams.AddObjectTypesToQuery(ECC_Pawn);
+        ObjParams.AddObjectTypesToQuery(ECC_PhysicsBody); // include skeletal mesh bodies
+
+        // Array to store hit results
+        TArray<FHitResult> Hits;
 
         // Perform the sweep
         GetWorld()->SweepMultiByObjectType(
@@ -96,7 +106,7 @@ void UMCS_CombatHitboxComponent::PerformSweep()
             StepStart,
             StepEnd,
             FQuat::Identity,
-            FCollisionObjectQueryParams(ECC_Pawn),
+            ObjParams,
             FCollisionShape::MakeSphere(ActiveHitbox.Radius),
             Params
         );

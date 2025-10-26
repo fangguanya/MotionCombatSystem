@@ -79,8 +79,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction", meta = (ClampMin = "0.1", UIMin = "0.1"))
     float PlayRate = 1.0f;
 
+    /* -----------------------------------------------------------------
+     *  NEW Limb / Bone Support
+     * ----------------------------------------------------------------- */
+
+    /**
+     * Optional bone name for bone- or limb-specific reactions.
+     * Example: "thigh_l", "head", "spine_02"
+     * Leave None to allow general (non-limb) reactions.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Limb", meta = (DisplayName = "Target Bone", Tooltip = "Optional bone name for bone- or limb-specific reactions. Leave None to allow general reactions."))
+    FName TargetBone = NAME_None;
+
+    /**
+     * Optional region mapping name (e.g. "LegLeft", "ArmRight", "Torso").
+     * This allows grouping multiple bones under one region label.
+     * Can be auto-mapped internally from TargetBone if left empty.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Limb", meta = (DisplayName = "Target Region", Tooltip = "Optional region mapping name (e.g. 'LegLeft', 'ArmRight', 'Torso'). This allows grouping multiple bones under one region label. Can be auto-mapped internally from TargetBone if left empty."))
+    FName TargetRegion = NAME_None;
+
     // ------------------------
-    // Knockdown-specific
+    // Knockdown-specific / Dazed-specific
     // ------------------------
 
     /** Time to pause after knockdown while character is on the ground before get-up. */
@@ -90,10 +110,6 @@ public:
     /** Montage to play when character gets up from knockdown. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Knockdown", meta = (DisplayName = "Get Up Montage"))
     TObjectPtr<UAnimMontage> GetUpMontage;
-
-    // ------------------------
-    // Dazed-specific
-    // ------------------------
 
     /** Time character remains dazed. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction|Dazed", meta = (DisplayName = "Dazed Time"))
