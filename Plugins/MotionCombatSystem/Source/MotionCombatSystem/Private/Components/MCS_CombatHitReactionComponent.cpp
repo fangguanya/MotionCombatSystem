@@ -14,11 +14,15 @@
  * MCS_CombatHitReactionComponent.cpp
  *
  * Implementation for the combat hit reaction component.
- * Future versions will handle responding to damage and playing
- * appropriate hit reaction animations or montages.
+ * Handles direction + severity-based hit reactions via DataTable-driven montages.
  */
 
 #include <Components/MCS_CombatHitReactionComponent.h>
+#include "Animation/AnimInstance.h"
+#include "GameFramework/Character.h"
+#include "Engine/DataTable.h"
+#include "Kismet/KismetSystemLibrary.h"
+
 
  // Constructor
 UMCS_CombatHitReactionComponent::UMCS_CombatHitReactionComponent()
@@ -33,89 +37,130 @@ void UMCS_CombatHitReactionComponent::BeginPlay()
 }
 
 /**
- * Performs a hit reaction based on the specified hit direction.
- * @param HitDirection The direction of the hit (e.g., "Hit.Back", "Hit.Forward", etc.).
- * @param PlayRate The play rate for the hit reaction montage.
-*/
-void UMCS_CombatHitReactionComponent::PerformHitReaction(EMCS_Direction Direction, EPGAS_HitSeverity Severity)
+ * Performs a hit reaction using hit result data.
+ * Automatically determines direction from the hit location and selects
+ * a matching reaction montage based on bone, region, direction, and severity.
+ *
+ * @param Hit - The hit result data containing impact point and bone info.
+ * @param TargetActor - The actor that was hit (usually GetOwner()).
+ * @param Severity - The hit severity (Light, Heavy, Knockback, etc.).
+ */
+void UMCS_CombatHitReactionComponent::PerformHitReaction(const FHitResult& Hit, AActor* TargetActor, EPGAS_HitSeverity Severity)
 {
-    // if (!CachedOwnerCharacter)
-    // {
-    //     UE_LOG(LogTemp, Warning, TEXT("HitReactionComponent: No owner character."));
-    //     return;
-    // }
+    if (!HitReactionDataTable)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[HitReaction] No HitReactionDataTable assigned."));
+        return;
+    }
 
-    // // Find the best reaction
-    // const FPGAS_HitReaction* Reaction = FindReaction(Direction, Severity);
+    if (!TargetActor)
+    {
+        TargetActor = GetOwner();
+        if (!TargetActor)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Invalid TargetActor."));
+            return;
+        }
+    }
 
-    // if (!Reaction)
-    // {
-    //     UE_LOG(LogTemp, Warning, TEXT("HitReactionComponent: No matching hit reaction found."));
-    //     return;
-    // }
+    const FVector HitLocation = Hit.ImpactPoint;
+    const FName BoneName = Hit.BoneName;
 
-    // // Activate ability or play montage
-    // // Abilities take precedence over montages
-    // if (Reaction->AbilityTag.IsValid())
-    // {
-    //     // If the reaction has an ability tag, try to activate that ability by event
-    //     UPGAS_HitReactionDataObject* DataObj = NewObject<UPGAS_HitReactionDataObject>();
-    //     DataObj->Data = *Reaction;
+    // Determine hit direction relative to actor
+    const EMCS_Direction Direction = CalculateHitDirection(HitLocation, TargetActor);
 
-    //     // Build event data
-    //     FGameplayEventData EventData;
-    //     EventData.EventTag = Reaction->AbilityTag; // ability listens for this
-    //     EventData.OptionalObject = DataObj;
+    // Look up reaction from DataTable
+    const FMCS_HitReaction* Reaction = FindReaction(BoneName, Direction, Severity);
+    if (!Reaction)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[HitReaction] No matching reaction found (Bone=%s, Dir=%d, Severity=%d)."),
+            *BoneName.ToString(), static_cast<int32>(Direction), static_cast<int32>(Severity));
+        return;
+    }
 
-    //     UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(CachedOwnerCharacter, Reaction->AbilityTag, EventData);
-    // }
-    // else if (Reaction->Montage) // Play the montage if found
-    // {
-    //     PlayMontageInternal(Reaction->Montage, Reaction->PlayRate);
-    // }
-    // else
-    // {
-    //     UE_LOG(LogTemp, Warning, TEXT("HitReactionComponent: No matching hit reaction found for %d + %d"),
-    //         (int32)Direction, (int32)Severity);
-    // }
+    if (!Reaction->Montage)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Reaction montage is null (Bone=%s, Region=%s)."),
+            *Reaction->TargetBone.ToString(), *Reaction->TargetRegion.ToString());
+        return;
+    }
+
+    // Play montage
+    PlayMontageInternal(Reaction->Montage, Reaction->PlayRate);
+
+    UE_LOG(LogTemp, Log, TEXT("[HitReaction] Playing reaction: %s (Bone=%s, Region=%s, Dir=%d, Severity=%d)"),
+        *Reaction->Montage->GetName(),
+        *Reaction->TargetBone.ToString(),
+        *Reaction->TargetRegion.ToString(),
+        static_cast<int32>(Direction),
+        static_cast<int32>(Severity));
 }
 
+
 /**
- * Finds the best matching reaction based on direction and severity.
- * @param Direction The hit direction.
- * @param Severity The hit severity.
+ * Finds the best matching hit reaction using bone, region, direction, and severity hierarchy.
+ * @param BoneName - The bone struck (can be NAME_None).
+ * @param Direction - The direction of the hit (Forward, Back, etc.).
+ * @param Severity - The severity of the hit (Light, Heavy, Knockdown, etc.).
  * @return The best matching hit reaction, or nullptr if none found.
  */
-const FMCS_HitReaction* UMCS_CombatHitReactionComponent::FindReaction(EMCS_Direction Direction, EPGAS_HitSeverity Severity) const
+const FMCS_HitReaction* UMCS_CombatHitReactionComponent::FindReaction(const FName& BoneName, EMCS_Direction Direction, EPGAS_HitSeverity Severity) const
 {
-    // // First look for exact match
-    // for (const FMCS_HitReaction& Reaction : HitReactions)
-    // {
-    //     if (Reaction.Direction == Direction && Reaction.Severity == Severity)
-    //     {
-    //         return &Reaction;
-    //     }
-    // }
+    if (!HitReactionDataTable) return nullptr;
 
-    // // If none found, fallback: try matching only by severity
-    // for (const FPGAS_HitReaction& Reaction : HitReactions)
-    // {
-    //     if (Reaction.Severity == Severity)
-    //     {
-    //         return &Reaction;
-    //     }
-    // }
+    static const FString Context(TEXT("FindReaction"));
+    TArray<FMCS_HitReaction*> AllRows;
+    HitReactionDataTable->GetAllRows(Context, AllRows);
 
-    // // If still none found, fallback: try matching only by direction
-    // for (const FPGAS_HitReaction& Reaction : HitReactions)
-    // {
-    //     if (Reaction.Direction == Direction)
-    //     {
-    //         return &Reaction;
-    //     }
-    // }
+    const FMCS_HitReaction* ExactBoneMatch = nullptr;
+    const FMCS_HitReaction* RegionMatch = nullptr;
+    const FMCS_HitReaction* DirectionMatch = nullptr;
+    const FMCS_HitReaction* SeverityOnly = nullptr;
 
-    // Nothing found
+    // Map bone to high-level region name
+    const FName MappedRegion = MapBoneToRegion(BoneName);
+
+    for (const FMCS_HitReaction* Row : AllRows)
+    {
+        if (!Row) continue;
+
+        const bool bSeverityMatch = (Row->Severity == Severity);
+        const bool bDirectionMatch = (Row->Direction == Direction || Row->Direction == EMCS_Direction::None);
+
+        // Bone-specific match (highest priority)
+        if (bSeverityMatch && Row->TargetBone == BoneName && !BoneName.IsNone())
+        {
+            ExactBoneMatch = Row;
+            break; // stop immediately — best possible match
+        }
+
+        // Region match (second priority)
+        if (bSeverityMatch && !MappedRegion.IsNone() && Row->TargetRegion == MappedRegion)
+        {
+            RegionMatch = Row;
+            // don’t break; might still find exact bone later
+        }
+
+        // Direction + Severity match (third priority)
+        if (bSeverityMatch && bDirectionMatch && Row->TargetBone.IsNone() && Row->TargetRegion.IsNone())
+        {
+            DirectionMatch = Row;
+        }
+
+        // Severity-only fallback (lowest priority)
+        if (bSeverityMatch && Row->Direction == EMCS_Direction::None &&
+            Row->TargetBone.IsNone() && Row->TargetRegion.IsNone())
+        {
+            SeverityOnly = Row;
+        }
+    }
+
+    // Return in hierarchical order of specificity
+    if (ExactBoneMatch) return ExactBoneMatch;
+    if (RegionMatch) return RegionMatch;
+    if (DirectionMatch) return DirectionMatch;
+    if (SeverityOnly) return SeverityOnly;
+
     return nullptr;
 }
 
@@ -126,11 +171,111 @@ const FMCS_HitReaction* UMCS_CombatHitReactionComponent::FindReaction(EMCS_Direc
  */
 void UMCS_CombatHitReactionComponent::PlayMontageInternal(UAnimMontage* Montage, float InPlayRate)
 {
-    // if (Montage && CachedOwnerCharacter)
-    // {
-    //     if (UAnimInstance* AnimInstance = CachedOwnerCharacter->GetMesh()->GetAnimInstance())
-    //     {
-    //         AnimInstance->Montage_Play(Montage, InPlayRate);
-    //     }
-    // }
+    if (!Montage)
+        return;
+
+    ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner());
+    if (!CharacterOwner || !CharacterOwner->GetMesh())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Invalid Character or Mesh."));
+        return;
+    }
+
+    UAnimInstance* AnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+    if (!AnimInstance)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Missing AnimInstance."));
+        return;
+    }
+
+    // Stop any current reaction to ensure clarity
+    AnimInstance->Montage_Stop(0.1f);
+    AnimInstance->Montage_Play(Montage, InPlayRate);
+}
+
+/**
+ * Calculates hit direction based on hit location relative to the target actor.
+ * @param HitLocation The world location of the hit.
+ * @param TargetActor The actor that was hit.
+ * @return The calculated hit direction enum value.
+ */
+EMCS_Direction UMCS_CombatHitReactionComponent::CalculateHitDirection(const FVector& HitLocation, AActor* TargetActor)
+{
+    if (!TargetActor)
+        return EMCS_Direction::None;
+
+    const FVector ActorLocation = TargetActor->GetActorLocation();
+    const FVector Forward = TargetActor->GetActorForwardVector();
+    const FVector Right = TargetActor->GetActorRightVector();
+
+    // Direction from actor to hit
+    const FVector ToHit = (HitLocation - ActorLocation).GetSafeNormal();
+
+    // Dot products for angle comparison
+    const float ForwardDot = FVector::DotProduct(Forward, ToHit);
+    const float RightDot = FVector::DotProduct(Right, ToHit);
+
+    // Determine primary direction quadrant
+    // Forward/back is dominant axis (based on sign of ForwardDot)
+    // Right/left is secondary
+    if (FMath::Abs(ForwardDot) >= FMath::Abs(RightDot))
+    {
+        return (ForwardDot >= 0.0f) ? EMCS_Direction::Forward : EMCS_Direction::Back;
+    }
+    else
+    {
+        return (RightDot >= 0.0f) ? EMCS_Direction::Right : EMCS_Direction::Left;
+    }
+}
+
+/**
+ * Internal helper that maps bone names to simplified body regions (e.g., "LegLeft", "Torso").
+ * @param BoneName The name of the bone to map.
+ * @return The mapped body region name, or NAME_None if no mapping exists.
+ */
+FName UMCS_CombatHitReactionComponent::MapBoneToRegion(const FName& BoneName) const
+{
+    if (BoneName.IsNone())
+        return NAME_None;
+
+    const FString Bone = BoneName.ToString().ToLower();
+
+    // ---- HEAD ----
+    if (Bone.Contains(TEXT("head")) || Bone.Contains(TEXT("neck")))
+    {
+        return FName("Head");
+    }
+
+    // ---- TORSO / SPINE ----
+    if (Bone.Contains(TEXT("spine")) || Bone.Contains(TEXT("pelvis")) || Bone.Contains(TEXT("root")))
+    {
+        return FName("Torso");
+    }
+
+    // ---- LEFT ARM ----
+    if (Bone.Contains(TEXT("upperarm_l")) || Bone.Contains(TEXT("lowerarm_l")) || Bone.Contains(TEXT("hand_l")) || Bone.Contains(TEXT("shoulder_l")))
+    {
+        return FName("ArmLeft");
+    }
+
+    // ---- RIGHT ARM ----
+    if (Bone.Contains(TEXT("upperarm_r")) || Bone.Contains(TEXT("lowerarm_r")) || Bone.Contains(TEXT("hand_r")) || Bone.Contains(TEXT("shoulder_r")))
+    {
+        return FName("ArmRight");
+    }
+
+    // ---- LEFT LEG ----
+    if (Bone.Contains(TEXT("thigh_l")) || Bone.Contains(TEXT("calf_l")) || Bone.Contains(TEXT("foot_l")) || Bone.Contains(TEXT("ball_l")))
+    {
+        return FName("LegLeft");
+    }
+
+    // ---- RIGHT LEG ----
+    if (Bone.Contains(TEXT("thigh_r")) || Bone.Contains(TEXT("calf_r")) || Bone.Contains(TEXT("foot_r")) || Bone.Contains(TEXT("ball_r")))
+    {
+        return FName("LegRight");
+    }
+
+    // ---- Default / Unknown ----
+    return NAME_None;
 }

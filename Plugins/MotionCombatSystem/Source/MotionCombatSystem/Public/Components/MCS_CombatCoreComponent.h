@@ -156,6 +156,8 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     /** Update PlayerSituation each frame */
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -210,6 +212,10 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MCS|Core|Combo", meta = (AllowPrivateAccess = "true"))
     TArray<FName> AllowedComboNames;
 
+    /** Pool of reusable chooser instances to avoid allocations every selection */
+    UPROPERTY(Transient)
+    TArray<TObjectPtr<UMCS_AttackChooser>> ChooserPool;
+
     /*
      * Functions
      */
@@ -233,4 +239,22 @@ private:
     void HandleComboNotifyBegin();
     UFUNCTION()
     void HandleComboNotifyEnd();
+
+    /** Gets a reusable chooser instance or creates a new one if needed */
+    UMCS_AttackChooser* GetPooledChooser(TSubclassOf<UMCS_AttackChooser> ChooserClass);
+
+    /** Cleans up invalid chooser instances from the pool */
+    void ClearChooserPool()
+    {
+        for (int32 i = ChooserPool.Num() - 1; i >= 0; --i)
+        {
+            UMCS_AttackChooser* Chooser = ChooserPool[i];
+
+            // IsValid() handles nullptr and pending kill checks automatically
+            if (!IsValid(Chooser))
+            {
+                ChooserPool.RemoveAt(i);
+            }
+        }
+    }
 };

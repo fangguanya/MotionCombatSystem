@@ -125,16 +125,9 @@ float UMCS_AttackChooser::ScoreAttack_Implementation(
     const float DirectionScore = ComputeDirectionalScore(Entry, DesiredDirection);
     const float SituationScore = ComputeSituationScore(Entry, CurrentSituation);
 
-// #if WITH_EDITORONLY_DATA || UE_BUILD_DEVELOPMENT
-//     if (DistanceScore <= -TNumericLimits<float>::Max() * 0.5f)
-//         UE_LOG(LogTemp, Verbose, TEXT("[Chooser] %s failed distance window"), *Entry.AttackName.ToString());
-//     if (SituationScore <= -TNumericLimits<float>::Max() * 0.5f)
-//         UE_LOG(LogTemp, Verbose, TEXT("[Chooser] %s failed required condition"), *Entry.AttackName.ToString());
-// #endif
-
-    // -----------------------------------------------------------------
-    //  Clean logging helpers: clamp or label disqualified values
-    // -----------------------------------------------------------------
+    /* -----------------------------------------------------------------
+      Clean logging helpers: clamp or label disqualified values
+     ----------------------------------------------------------------- */
     auto Sanitize = [ ] (float Value) -> FString
         {
             if (!FMath::IsFinite(Value))
@@ -200,6 +193,7 @@ float UMCS_AttackChooser::ComputeTagScore(const FMCS_AttackEntry& Entry) const
  */
 float UMCS_AttackChooser::ComputeDistanceScore(const FMCS_AttackEntry& Entry, AActor* Instigator, const TArray<AActor*>& Targets) const
 {
+    // Guard checks
     if (!Instigator || Targets.IsEmpty())
         return 0.f;
 
@@ -207,6 +201,7 @@ float UMCS_AttackChooser::ComputeDistanceScore(const FMCS_AttackEntry& Entry, AA
     float ClosestDistSq = TNumericLimits<float>::Max();
     const FVector InstigatorLoc = Instigator->GetActorLocation();
 
+    // Find closest valid target
     for (AActor* Target : Targets)
     {
         if (!IsValid(Target))
@@ -223,23 +218,38 @@ float UMCS_AttackChooser::ComputeDistanceScore(const FMCS_AttackEntry& Entry, AA
     if (!ClosestTarget)
         return 0.f;
 
-    const float Dist = FMath::Sqrt(ClosestDistSq);
-    if (Dist < Entry.RangeStart)
-        return -(Entry.RangeStart - Dist) * 0.1f;
+    const float Distance = FMath::Sqrt(ClosestDistSq);
 
-    if (Dist > Entry.RangeEnd)
+    // Disqualify if completely outside the valid attack window
+    if (Distance < Entry.RangeStart || Distance > Entry.RangeEnd)
     {
-        if (Dist > Entry.RangeEnd * 1.25f)
+        // If too far beyond 25% buffer, treat as invalid (disqualified)
+        if (Distance > Entry.RangeEnd * 1.25f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Chooser] Attack '%s' disqualified (out of range %.0f)."), *Entry.AttackName.ToString(), Distance);
             return -TNumericLimits<float>::Max();
-        return -(Dist - Entry.RangeEnd) * 0.2f;
+        }
+
+        // Small soft penalty if near the edge of the valid window
+        const float Overshoot = FMath::Abs(Distance - (Distance < Entry.RangeStart ? Entry.RangeStart : Entry.RangeEnd));
+        return -(Overshoot * 0.1f);
     }
 
-    // Inside range window
-    const float Center = (Entry.RangeStart + Entry.RangeEnd) * 0.5f;
-    const float HalfWindow = (Entry.RangeEnd - Entry.RangeStart) * 0.5f;
-    const float Offset = FMath::Abs(Dist - Center);
-    const float ProximityFactor = 1.0f - (Offset / HalfWindow);
-    return FMath::Clamp(ProximityFactor, 0.f, 1.f) * 10.f;
+    // Inside valid range — apply smooth scoring curve centered in window
+    const float RangeMid = (Entry.RangeStart + Entry.RangeEnd) * 0.5f;
+    const float RangeDelta = FMath::Abs(Distance - RangeMid);
+    const float RangeTolerance = (Entry.RangeEnd - Entry.RangeStart) * 0.5f;
+
+    // Normalized 0 (edge) → 1 (perfect center)
+    const float Normalized = 1.f - FMath::Clamp(RangeDelta / RangeTolerance, 0.f, 1.f);
+
+    // Map to -10..+10 scoring range
+    const float DistanceScore = (Normalized * 20.f) - 10.f;
+
+    UE_LOG(LogTemp, Warning, TEXT("[MCS_AttackChooser] DistanceScore for '%s': Dist=%.1f | Mid=%.1f | Score=%.2f"),
+        *Entry.AttackName.ToString(), Distance, RangeMid, DistanceScore);
+
+    return DistanceScore;
 }
 
 /**

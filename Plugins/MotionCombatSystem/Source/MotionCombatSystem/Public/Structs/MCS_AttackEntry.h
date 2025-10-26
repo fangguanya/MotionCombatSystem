@@ -28,6 +28,7 @@
 #include <Enums/EMCS_AttackSituations.h>
 #include <Structs/MCS_AttackHitbox.h>
 #include <Structs/MCS_AttackCondition.h>
+#include <Structs/MCS_HitReaction.h>
 #include "MCS_AttackEntry.generated.h"
 
 
@@ -146,6 +147,13 @@ public:
 	/** List of attack names that can follow this attack in a combo sequence. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|Attack|Combo", meta = (DisplayName = "Allowed Next Attacks"))
 	TArray<FName> AllowedNextAttacks;
+
+	/* ---------------------------
+	 * Hit Reaction Support
+	 * --------------------------- */
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|Attack|", meta = (DisplayName = "Hit Severity"))
+	EPGAS_HitSeverity HitSeverity = EPGAS_HitSeverity::Light;
 
 	/*
 	 * Functions
