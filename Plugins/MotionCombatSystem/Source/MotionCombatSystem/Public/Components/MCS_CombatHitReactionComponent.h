@@ -33,6 +33,9 @@ public:
     // Constructor
     UMCS_CombatHitReactionComponent();
 
+    // Destructor
+    virtual ~UMCS_CombatHitReactionComponent() override = default;
+
     /*
     * Functions
     */

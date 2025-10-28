@@ -22,6 +22,9 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+// Local dependency: used only for pulling defensive state info
+#include <Components/MCS_CombatDefenseComponent.h>
+
 #if WITH_EDITORONLY_DATA
 #include "Engine/Canvas.h"
 #include "Engine/Font.h"
@@ -29,7 +32,7 @@
 #endif
 
 
- // Constructor
+// Constructor
 UMCS_CombatCoreComponent::UMCS_CombatCoreComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
@@ -491,8 +494,12 @@ void UMCS_CombatCoreComponent::HandleMCSNotifyBegin(EMCS_AnimEventType EventType
     // Validate the notify instance
     if (!Notify) return;
 
+    // Validate owner
+    const AActor* Owner = GetOwner();
+    if (!Owner) return;
+
     // 🛡️ Guard: only run if this character is actively playing this montage
-    if (const ACharacter* C = Cast<ACharacter>(GetOwner());
+    if (const ACharacter* C = Cast<ACharacter>(Owner);
         !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
             C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage)))
         return;
@@ -528,6 +535,16 @@ void UMCS_CombatCoreComponent::HandleMCSNotifyBegin(EMCS_AnimEventType EventType
             OnComboWindowBegin.Broadcast();
             
             break;
+
+        case EMCS_AnimEventType::ParryWindow:
+            OnParryWindowBegin.Broadcast(const_cast<AActor*>(Owner));
+            UE_LOG(LogTemp, Log, TEXT("[CombatCore] Parry Window Begin for %s"), *Owner->GetName());
+            break;
+
+        case EMCS_AnimEventType::DefenseWindow:
+            OnDefenseWindowBegin.Broadcast(const_cast<AActor*>(Owner));
+            UE_LOG(LogTemp, Log, TEXT("[CombatCore] Defense Window Begin for %s"), *Owner->GetName());
+            break;
     }
 }
 
@@ -536,8 +553,12 @@ void UMCS_CombatCoreComponent::HandleMCSNotifyEnd(EMCS_AnimEventType EventType, 
     // Validate the notify instance
     if (!Notify) return;
 
+    // Validate owner
+    const AActor* Owner = GetOwner();
+    if (!Owner) return;
+
     // 🛡️ Guard: only run if this character is actively playing this montage
-    if (const ACharacter* C = Cast<ACharacter>(GetOwner());
+    if (const ACharacter* C = Cast<ACharacter>(Owner);
         !(C && C->GetMesh() && C->GetMesh()->GetAnimInstance() &&
             C->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CurrentAttack.AttackMontage)))
         return;
@@ -561,6 +582,16 @@ void UMCS_CombatCoreComponent::HandleMCSNotifyEnd(EMCS_AnimEventType EventType, 
             if (!bCanContinueCombo)
                 AllowedComboNames.Reset();
             
+            break;
+
+        case EMCS_AnimEventType::ParryWindow:
+            OnParryWindowEnd.Broadcast(const_cast<AActor*>(Owner));
+            UE_LOG(LogTemp, Log, TEXT("[CombatCore] Parry Window End for %s"), *Owner->GetName());
+            break;
+
+        case EMCS_AnimEventType::DefenseWindow:
+            OnDefenseWindowEnd.Broadcast(const_cast<AActor*>(Owner));
+            UE_LOG(LogTemp, Log, TEXT("[CombatCore] Defense Window End for %s"), *Owner->GetName());
             break;
     }
 }
@@ -652,6 +683,13 @@ void UMCS_CombatCoreComponent::UpdatePlayerSituation(float DeltaTime)
         PlayerSituation.Altitude = (Start - Hit.Location).Size();
     else
         PlayerSituation.Altitude = 0.f;
+
+    // Check for parry/blocking state from defense component
+    if (UMCS_CombatDefenseComponent* Defense = OwnerPawn->FindComponentByClass<UMCS_CombatDefenseComponent>())
+    {
+        PlayerSituation.bIsParrying = Defense->bIsInParryWindow; // Is parrying state.
+        PlayerSituation.bIsBlocking = Defense->bIsInDefenseWindow; // Is blocking state.
+    }
 
     // Optional: get stamina/health percent from owner’s interface or attributes (placeholder)
     PlayerSituation.Stamina = 100.f;

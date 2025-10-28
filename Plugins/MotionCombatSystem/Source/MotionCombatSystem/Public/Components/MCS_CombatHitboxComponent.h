@@ -43,7 +43,11 @@ class MOTIONCOMBATSYSTEM_API UMCS_CombatHitboxComponent : public UActorComponent
     GENERATED_BODY()
 
 public:
+    // Constructor
     UMCS_CombatHitboxComponent();
+
+    // Destructor
+    virtual ~UMCS_CombatHitboxComponent() override = default;
 
     /*
      * Functions

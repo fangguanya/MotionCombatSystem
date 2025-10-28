@@ -48,6 +48,18 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnComboWindowBeginSignature);
 // Delegate for combo window end events
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnComboWindowEndSignature);
 
+// Delegates for parry window start event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParryWindowBeginSignature, AActor*, Attacker);
+
+// Delegate for parry window end event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParryWindowEndSignature, AActor*, Attacker);
+
+// Delegates for defense window start event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDefenseWindowBeginSignature, AActor*, Defender);
+
+// Delegate for defense window end event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDefenseWindowEndSignature, AActor*, Defender);
+
 
 /**
  * Core combat component that coordinates attack selection, target acquisition, and DataTable-driven attack loading.
@@ -60,6 +72,9 @@ class MOTIONCOMBATSYSTEM_API UMCS_CombatCoreComponent : public UActorComponent
 public:
     // Constructor
     UMCS_CombatCoreComponent();
+
+    // Destructor
+    virtual ~UMCS_CombatCoreComponent() override = default;
 
     /*
      * Properties
@@ -84,6 +99,23 @@ public:
     /** Blueprint Event triggered when the combo window ends */
     UPROPERTY(BlueprintAssignable, Category = "MCS|Core|Events", meta = (DisplayName = "On Combo Window End"))
     FOnComboWindowEndSignature OnComboWindowEnd;
+
+    /** Blueprint Event triggered when the parry window begins */
+    UPROPERTY(BlueprintAssignable, Category = "MCS|Core|Events", meta = (DisplayName = "On Parry Window Begin"))
+    FOnParryWindowBeginSignature OnParryWindowBegin;
+
+    /** Blueprint Event triggered when the parry window ends */
+    UPROPERTY(BlueprintAssignable, Category = "MCS|Core|Events", meta = (DisplayName = "On Parry Window End"))
+    FOnParryWindowEndSignature OnParryWindowEnd;
+
+    /** Blueprint Event triggered when the defense window begins */
+    UPROPERTY(BlueprintAssignable, Category = "MCS|Core|Events", meta = (DisplayName = "On Defense Window Begin"))
+    FOnDefenseWindowBeginSignature OnDefenseWindowBegin;
+
+    /** Blueprint Event triggered when the defense window ends */
+    UPROPERTY(BlueprintAssignable, Category = "MCS|Core|Events", meta = (DisplayName = "On Defense Window End"))
+    FOnDefenseWindowEndSignature OnDefenseWindowEnd;
+
 
     /*
      * Functions
@@ -230,15 +262,6 @@ private:
     UFUNCTION()
     void HandleMCSNotifyEnd(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify);
 
-<<<<<<< HEAD
-=======
-    // Callback targets for combo notify broadcasts
-    UFUNCTION()
-    void HandleComboNotifyBegin();
-    UFUNCTION()
-    void HandleComboNotifyEnd();
-
->>>>>>> 639b8e592af61b1ef5a831f3d3037c993571d6ce
     /** Gets a reusable chooser instance or creates a new one if needed */
     UMCS_AttackChooser* GetPooledChooser(TSubclassOf<UMCS_AttackChooser> ChooserClass);
 

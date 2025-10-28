@@ -60,6 +60,13 @@ public:
     bool bIsCrouching = false;
 
     /**
+     * True if the character is currently blocking incoming attacks.
+     * Used to determine if defensive maneuvers or counterattacks can be executed.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|Situation", meta = (DisplayName = "Is Blocking"))
+    bool bIsBlocking = false;
+
+    /**
      * True if the character is performing or has triggered a counterattack.
      * Commonly used for reactionary moves after blocking or evading an enemy attack.
      */
