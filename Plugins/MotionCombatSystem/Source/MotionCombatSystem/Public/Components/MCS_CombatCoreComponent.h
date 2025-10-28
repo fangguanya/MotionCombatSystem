@@ -230,6 +230,15 @@ private:
     UFUNCTION()
     void HandleMCSNotifyEnd(EMCS_AnimEventType EventType, UAnimNotifyState_MCSWindow* Notify);
 
+<<<<<<< HEAD
+=======
+    // Callback targets for combo notify broadcasts
+    UFUNCTION()
+    void HandleComboNotifyBegin();
+    UFUNCTION()
+    void HandleComboNotifyEnd();
+
+>>>>>>> 639b8e592af61b1ef5a831f3d3037c993571d6ce
     /** Gets a reusable chooser instance or creates a new one if needed */
     UMCS_AttackChooser* GetPooledChooser(TSubclassOf<UMCS_AttackChooser> ChooserClass);
 
