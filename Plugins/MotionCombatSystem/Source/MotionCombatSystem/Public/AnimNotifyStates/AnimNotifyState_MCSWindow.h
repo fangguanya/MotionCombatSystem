@@ -99,6 +99,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS", Meta = (DisplayName = "Hitbox"))
     FMCS_AttackHitbox Hitbox;
 
+    /** Optional window duration for parry/defense events */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS",
+        meta = (DisplayName = "Window Length (seconds)",
+            ToolTip = "Duration of this event window, automatically set from notify length."))
+    float WindowLength = 0.0f;
+
+    /*
+     * Delegates
+     */
+
     /** Broadcast when notify begins */
     UPROPERTY(BlueprintAssignable, Category = "MCS|Events")
     FOnMCSNotifyBegin OnNotifyBegin;
@@ -132,20 +142,26 @@ public:
      * Functions
      */
 
-    virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override
+    virtual void NotifyBegin(
+        USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override
     {
         if (!MeshComp) return;
+
+        // Store the total active time for this notify window
+        WindowLength = TotalDuration;
 
         OnNotifyBegin.Broadcast(EventType, this);
         OnMCSNotifyBegin(MeshComp, Animation, EventType);
 
         if (bDebug)
         {
-            UE_LOG(LogTemp, Log, TEXT("[MCSNotify] %s Begin (%s) | Tag: %s"), *DebugLabel.ToString(), *UEnum::GetValueAsString(EventType), *EventTag.ToString());
+            UE_LOG(LogTemp, Log, TEXT("[MCSNotify] %s Begin (%s) | Tag: %s"),
+                *DebugLabel.ToString(), *UEnum::GetValueAsString(EventType), *EventTag.ToString());
         }
     }
 
-    virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference) override
+    virtual void NotifyTick(
+        USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference) override
     {
         if (!MeshComp) return;
 

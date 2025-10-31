@@ -19,7 +19,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/UnrealMathUtility.h"
 
-UMCS_AttackChooser::UMCS_AttackChooser()
+UMCS_AttackChooser::UMCS_AttackChooser(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     MaxTargetDistance = 2500.0f;
     MaxTargetAngleDegrees = 180.0f;

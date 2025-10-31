@@ -32,6 +32,7 @@
 #include <Choosers/MCS_AttackChooser.h>
 #include <AnimNotifyStates/AnimNotifyState_MCSWindow.h>
 #include <Components/MCS_CombatHitboxComponent.h>
+#include <Events/MCS_CombatEventBus.h>
 #include "MCS_CombatCoreComponent.generated.h"
 
 
@@ -210,6 +211,10 @@ private:
     UPROPERTY()
     TObjectPtr<UMCS_TargetingSubsystem> TargetingSubsystem;
 
+    /** Runtime instance of the active attack chooser created from its Blueprint class */
+    UPROPERTY(Transient)
+    TObjectPtr<UMCS_AttackChooser> ActiveAttackChooser = nullptr;
+    
     /** Currently selected attack (if any) */
     UPROPERTY()
     FMCS_AttackEntry CurrentAttack;

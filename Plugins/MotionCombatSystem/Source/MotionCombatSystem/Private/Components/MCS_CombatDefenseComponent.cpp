@@ -18,6 +18,7 @@
 #include <Components/MCS_CombatDefenseComponent.h>
 #include "GameFramework/Actor.h"
 
+
 UMCS_CombatDefenseComponent::UMCS_CombatDefenseComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
@@ -45,6 +46,25 @@ void UMCS_CombatDefenseComponent::BeginPlay()
 
         UE_LOG(LogTemp, Log, TEXT("[CombatDefense] Initialized for Actor: %s"), *Owner->GetName());
     }
+
+    // Bind to event bus for global combat events
+    if (UWorld* World = GetWorld())
+    {
+        if (UMCS_CombatEventBus* Bus = UMCS_CombatEventBus::Get(World))
+        {
+            Bus->OnAttackStarted.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalAttackStarted);
+            Bus->OnParryWindowOpened.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParryWindowOpened);
+            Bus->OnParrySuccess.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParrySuccess);
+            Bus->OnBlockSuccess.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
+        }
+    }
+
+    // If no active set defined but map has entries, activate the first
+    if (!ActiveDefenseSetTag.IsValid() && DefenseSets.Num() > 0)
+    {
+        const FGameplayTag FirstKey = DefenseSets.CreateConstIterator()->Key;
+        SetActiveDefenseSet(FirstKey);
+    }
 }
 
 /**
@@ -68,6 +88,19 @@ void UMCS_CombatDefenseComponent::EndPlay(const EEndPlayReason::Type EndPlayReas
             Core->OnParryWindowEnd.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleParryWindowEnd);
         }
     }
+
+    // Unbind from event bus
+    if (UWorld* World = GetWorld())
+    {
+        if (UMCS_CombatEventBus* Bus = UMCS_CombatEventBus::Get(World))
+        {
+            Bus->OnAttackStarted.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalAttackStarted);
+            Bus->OnParryWindowOpened.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParryWindowOpened);
+            Bus->OnParrySuccess.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParrySuccess);
+            Bus->OnBlockSuccess.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
+        }
+    }
+
 }
 
 /**
@@ -137,6 +170,15 @@ bool UMCS_CombatDefenseComponent::TryParry()
     {
         UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] Parry SUCCESS against %s"), *GetNameSafe(LastParrySource));
         OnParrySuccess.Broadcast();
+
+        if (UWorld* World = GetWorld())
+        {
+            if (UMCS_CombatEventBus* Bus = UMCS_CombatEventBus::Get(World))
+            {
+                Bus->OnParrySuccess.Broadcast(GetOwner(), LastParrySource);
+            }
+        }
+
         return true;
     }
 
@@ -156,5 +198,102 @@ bool UMCS_CombatDefenseComponent::TryBlock()
 
     UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] Block SUCCESS."));
     OnBlockSuccess.Broadcast();
+
+    if (UWorld* World = GetWorld())
+    {
+        if (UMCS_CombatEventBus* Bus = UMCS_CombatEventBus::Get(World))
+        {
+            Bus->OnBlockSuccess.Broadcast(GetOwner(), LastParrySource);
+        }
+    }
     return true;
 }
+
+void UMCS_CombatDefenseComponent::HandleGlobalAttackStarted(AActor* Attacker, AActor* Target)
+{
+    if (Attacker == GetOwner()) return; // Ignore self
+    UE_LOG(LogTemp, Verbose, TEXT("[CombatDefense] Global Attack Started by %s -> Target: %s"), *GetNameSafe(Attacker), *GetNameSafe(Target));
+}
+
+void UMCS_CombatDefenseComponent::HandleGlobalParryWindowOpened(AActor* Attacker, float Duration)
+{
+    if (Attacker == GetOwner()) return; // Ignore self
+    UE_LOG(LogTemp, Verbose, TEXT("[CombatDefense] Parry window opened by %s for %.2fs"), *GetNameSafe(Attacker), Duration);
+}
+
+void UMCS_CombatDefenseComponent::HandleGlobalParrySuccess(AActor* Defender, AActor* Attacker)
+{
+    if (Defender == GetOwner())
+    {
+        UE_LOG(LogTemp, Log, TEXT("[CombatDefense] We successfully parried %s!"), *GetNameSafe(Attacker));
+    }
+    else if (Attacker == GetOwner())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] Our attack was parried by %s!"), *GetNameSafe(Defender));
+    }
+}
+
+void UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess(AActor* Defender, AActor* Attacker)
+{
+    if (Defender == GetOwner())
+    {
+        UE_LOG(LogTemp, Log, TEXT("[CombatDefense] We successfully blocked %s!"), *GetNameSafe(Attacker));
+    }
+}
+
+/*
+ * Sets the active defense set tag and rebuilds the cached defensive pool.
+ *
+ * @param NewDefenseSetTag - The gameplay tag representing the new active defense set.
+ * @return True if the defense set was successfully activated; false if invalid or incomplete.
+ */
+bool UMCS_CombatDefenseComponent::SetActiveDefenseSet(const FGameplayTag& NewDefenseSetTag)
+{
+    const FMCS_DefenseSetData* FoundSet = DefenseSets.Find(NewDefenseSetTag);
+    if (!FoundSet)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] No DefenseSet found for tag: %s"), *NewDefenseSetTag.ToString());
+        return false;
+    }
+
+    if (!IsValid(FoundSet->DefenseDataTable) || !FoundSet->DefenseChooser)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] DefenseSet '%s' missing DataTable or Chooser Class."),
+            *NewDefenseSetTag.ToString());
+        return false;
+    }
+
+    if (IsValid(ActiveDefenseChooser))
+    {
+        ActiveDefenseChooser->MarkAsGarbage();
+        ActiveDefenseChooser = nullptr;
+    }
+
+    // Store new active tag
+    ActiveDefenseSetTag = NewDefenseSetTag;
+
+    // -------------------------------------------------------------
+    // 1. Create a runtime instance of the Defense Chooser
+    // -------------------------------------------------------------
+    ActiveDefenseChooser = NewObject<UMCS_DefenseChooser>(this, FoundSet->DefenseChooser);
+    check(ActiveDefenseChooser);
+
+    // -------------------------------------------------------------
+    // 2. Populate the chooser’s DefenseEntries array
+    // -------------------------------------------------------------
+    ActiveDefenseChooser->DefenseEntries.Reset();
+
+    TArray<FMCS_DefenseEntry*> Rows;
+    FoundSet->DefenseDataTable->GetAllRows(TEXT("LoadDefenseSet"), Rows);
+
+    for (const FMCS_DefenseEntry* Row : Rows)
+    {
+        if (Row)
+        {
+            ActiveDefenseChooser->DefenseEntries.Add(*Row);
+        }
+    }
+
+    return true;
+}
+

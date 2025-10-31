@@ -24,7 +24,7 @@
 #include <Structs/MCS_HitReaction.h>
 #include "MCS_CombatHitReactionComponent.generated.h"
 
-UCLASS(Blueprintable, ClassGroup = (MotionCombatSystem), meta = (BlueprintSpawnableComponent, DisplayName = "Motion Combat Hit Reaction Component"))
+UCLASS(Blueprintable, ClassGroup = (MotionCombatSystem), meta = (BlueprintSpawnableComponent, DisplayName = "Motion Combat System Hit Reaction Component"))
 class MOTIONCOMBATSYSTEM_API UMCS_CombatHitReactionComponent : public UActorComponent
 {
     GENERATED_BODY()

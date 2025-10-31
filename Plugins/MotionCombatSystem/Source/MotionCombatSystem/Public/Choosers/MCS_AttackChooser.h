@@ -41,19 +41,21 @@ class AActor;
  * (ComputeTagScore, ComputeDistanceScore, ComputeDirectionalScore, AggregateScore)
  * to improve designer usability.
  */
-UCLASS(Blueprintable, BlueprintType, EditInlineNew, CollapseCategories, ClassGroup = (MotionCombatSystem), meta = (DisplayName = "Motion Combat System Attack Chooser"))
+UCLASS(Blueprintable, BlueprintType, ClassGroup = (MotionCombatSystem),
+    meta = (DisplayName = "Motion Combat System Attack Chooser", ShortTooltip = "Chooses the best attack action based on scoring and context.")
+)
 class MOTIONCOMBATSYSTEM_API UMCS_AttackChooser : public UObject
 {
     GENERATED_BODY()
 
 public:
-    UMCS_AttackChooser();
+    UMCS_AttackChooser(const FObjectInitializer& ObjectInitializer);
 
     /* ==========================================================
      * Configurable Data
      * ========================================================== */
 
-     /** Candidate attack entries (usually loaded from a DataTable). */
+    /** Candidate attack entries (usually loaded from a DataTable). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS|AttackChooser")
     TArray<FMCS_AttackEntry> AttackEntries;
 
@@ -92,7 +94,7 @@ public:
      * Public API
      * ========================================================== */
 
-     /** Main function that chooses the best attack from AttackEntries. */
+    /** Main function that chooses the best attack from AttackEntries. */
     UFUNCTION(BlueprintCallable, Category = "MCS|AttackChooser", meta = (DisplayName = "Choose Attack", ReturnDisplayName = "Was Attack Chosen"))
     bool ChooseAttack(
         AActor* Instigator,
@@ -109,7 +111,7 @@ public:
      * Scoring API (BlueprintPure helpers)
      * ========================================================== */
 
-     /** Computes a score modifier based on tag filtering and preferences. */
+    /** Computes a score modifier based on tag filtering and preferences. */
     UFUNCTION(BlueprintPure, Category = "MCS|AttackChooser|Scoring", meta = (DisplayName = "Compute Tag Score", ReturnDisplayName = "Score"))
     float ComputeTagScore(const FMCS_AttackEntry& Entry) const;
 
@@ -122,7 +124,7 @@ public:
     float ComputeDirectionalScore(const FMCS_AttackEntry& Entry, EMCS_AttackDirection DesiredDirection) const;
 
     /** Computes a score modifier based on the current combat situation. */
-    UFUNCTION(BlueprintPure, Category = "MCS|AttackChooser|Scoring")
+    UFUNCTION(BlueprintPure, Category = "MCS|AttackChooser|Scoring", meta = (DisplayName = "Compute Situation Score", ReturnDisplayName = "Score"))
     float ComputeSituationScore(const FMCS_AttackEntry& Entry, const FMCS_AttackSituation& CurrentSituation) const;
 
     /** Combines individual score components into a final result. */
@@ -131,11 +133,12 @@ public:
 
 
 protected:
+
     /* ==========================================================
-     * Core virtuals
+         * Core virtuals
      * ========================================================== */
 
-     /** Core scoring entry point (BlueprintNativeEvent). */
+    /** Core scoring entry point (BlueprintNativeEvent). */
     UFUNCTION(BlueprintNativeEvent, BlueprintPure, Category = "MCS|AttackChooser", meta = (DisplayName = "Score Attack Entry", ReturnDisplayName = "Score"))
     float ScoreAttack(
         const FMCS_AttackEntry& Entry,
