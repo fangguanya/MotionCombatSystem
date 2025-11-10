@@ -35,8 +35,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParryOpportunitySignature, AActor
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDefenseWindowActiveSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnParrySuccessSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnParryFailSignature);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBlockSuccessSignature);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBlockFailSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDefenseSuccessSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDefenseFailSignature);
 
 
 
@@ -116,10 +116,10 @@ public:
     FOnParryFailSignature OnParryFail;
 
     UPROPERTY(BlueprintAssignable, Category = "MCS|Defense|Events", meta = (DisplayName = "On Block Success"))
-    FOnBlockSuccessSignature OnBlockSuccess;
+    FOnDefenseSuccessSignature OnDefenseSuccess;
 
     UPROPERTY(BlueprintAssignable, Category = "MCS|Defense|Events", meta = (DisplayName = "On Block Fail"))
-    FOnBlockFailSignature OnBlockFail;
+    FOnDefenseFailSignature OnDefenseFail;
 
     /*
      * Functions
@@ -131,7 +131,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "MCS|Defense",
         meta = (DisplayName = "Try Block", ToolTip = "Attempts to block during a defense window. Returns true if successful."))
-    bool TryBlock();
+    bool TryDefense();
 
     /**
      * Gets the currently selected attack (if any).

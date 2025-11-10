@@ -55,7 +55,7 @@ void UMCS_CombatDefenseComponent::BeginPlay()
             Bus->OnAttackStarted.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalAttackStarted);
             Bus->OnParryWindowOpened.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParryWindowOpened);
             Bus->OnParrySuccess.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParrySuccess);
-            Bus->OnBlockSuccess.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
+            Bus->OnDefenseSuccess.AddDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
         }
     }
 
@@ -97,7 +97,7 @@ void UMCS_CombatDefenseComponent::EndPlay(const EEndPlayReason::Type EndPlayReas
             Bus->OnAttackStarted.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalAttackStarted);
             Bus->OnParryWindowOpened.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParryWindowOpened);
             Bus->OnParrySuccess.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalParrySuccess);
-            Bus->OnBlockSuccess.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
+            Bus->OnDefenseSuccess.RemoveDynamic(this, &UMCS_CombatDefenseComponent::HandleGlobalBlockSuccess);
         }
     }
 
@@ -187,23 +187,23 @@ bool UMCS_CombatDefenseComponent::TryParry()
     return false;
 }
 
-bool UMCS_CombatDefenseComponent::TryBlock()
+bool UMCS_CombatDefenseComponent::TryDefense()
 {
     if (!bIsInDefenseWindow)
     {
         UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] Block failed: No active defense window."));
-        OnBlockFail.Broadcast();
+        OnDefenseFail.Broadcast();
         return false;
     }
 
     UE_LOG(LogTemp, Warning, TEXT("[CombatDefense] Block SUCCESS."));
-    OnBlockSuccess.Broadcast();
+    OnDefenseSuccess.Broadcast();
 
     if (UWorld* World = GetWorld())
     {
         if (UMCS_CombatEventBus* Bus = UMCS_CombatEventBus::Get(World))
         {
-            Bus->OnBlockSuccess.Broadcast(GetOwner(), LastParrySource);
+            Bus->OnDefenseSuccess.Broadcast(GetOwner(), LastParrySource);
         }
     }
     return true;

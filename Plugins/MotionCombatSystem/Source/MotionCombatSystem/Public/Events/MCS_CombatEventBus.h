@@ -45,7 +45,7 @@ public:
      * Blueprint-accessible version to get the Combat Event Bus for the given world context
      * @param WorldContextObject The context object to derive the UWorld from
      */
-    UFUNCTION(BlueprintCallable, Category = "MCS|Events", meta = (WorldContext = "WorldContextObject"))
+    UFUNCTION(BlueprintPure, Category = "MCS|Events", meta = (WorldContext = "WorldContextObject"))
     static UMCS_CombatEventBus* GetCombatEventBus(const UObject* WorldContextObject);
 
     // ==========================================================
@@ -68,9 +68,9 @@ public:
     FOnParrySuccessSignature OnParrySuccess;
 
     /** Block Success */
-    DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBlockSuccessSignature, AActor*, Defender, AActor*, Attacker);
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDefenseSuccessSignature, AActor*, Defender, AActor*, Attacker);
     UPROPERTY(BlueprintAssignable, Category = "MCS|Events|Block", meta=(DisplayName="On Block Success"))
-    FOnBlockSuccessSignature OnBlockSuccess;
+    FOnDefenseSuccessSignature OnDefenseSuccess;
 
     /** Hit Landed */
     DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHitLandedSignature, AActor*, Attacker, AActor*, Defender, const FMCS_AttackEntry&, AttackData);
