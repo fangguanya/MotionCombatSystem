@@ -16,6 +16,12 @@ public class MotionCombat : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"MotionCombatSystem",
+			"AnimGraphRuntime",
+			"StateTreeModule",
+			"GameplayStateTreeModule",
+			"AIModule",
+			"GameplayTags",
+			"NavigationSystem"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
