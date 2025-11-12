@@ -74,7 +74,21 @@ void UMCS_TargetingSubsystem::Deinitialize()
     {
         UE_LOG(LogTemp, Log, TEXT("%s UMCS_TargetingSubsystem::Deinitialize"), *MakeWorldTag());
     }
+
+    // Clear timers BEFORE world destruction to prevent callbacks firing on invalid UObject pointers
+    if (CachedWorld)
+    {
+        CachedWorld->GetTimerManager().ClearTimer(ScanTimerHandle);
+        CachedWorld->GetTimerManager().ClearAllTimersForObject(this);
+    }
+
+    ScanTimerHandle.Invalidate();
+
+    // Clear list to avoid stale UObject pointers during GC
+    RegisteredTargets.Empty();
+
     CachedWorld = nullptr;
+
     Super::Deinitialize();
 }
 
