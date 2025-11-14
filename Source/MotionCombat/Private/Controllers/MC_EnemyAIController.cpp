@@ -15,19 +15,27 @@
  */
 
 #include <Controllers/MC_EnemyAIController.h>
+<<<<<<< HEAD
 #include "GameFramework/Pawn.h"
 #include "StateTreePropertyRef.h"
 #include "StateTreePropertyBindings.h"
+=======
+#include <AI/Nodes/MC_AINodeBase.h>
+#include "GameFramework/Pawn.h"
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 
 
 AMC_EnemyAIController::AMC_EnemyAIController()
 {
     bAttachToPawn = true; // Attach controller to pawn
 
+<<<<<<< HEAD
     // Set up the State Tree AI Component for managing enemy AI behavior.
     // This component handles the AI behavior for the enemy character.
     StateTreeAIComponent = CreateDefaultSubobject<UMC_StateTreeAIComponent>(TEXT("State Tree AI Component"));
 
+=======
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     // Create Perception Component
     PerceptionComponent = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component"));
 
@@ -87,6 +95,7 @@ void AMC_EnemyAIController::BeginPlay()
 void AMC_EnemyAIController::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+<<<<<<< HEAD
 }
 
 /**
@@ -103,6 +112,17 @@ void AMC_EnemyAIController::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
 
     Super::EndPlay(EndPlayReason);
+=======
+
+    if (ActiveAINode && ActiveAINode->bIsRunning && ActiveAINode->bShouldTick)
+    {
+        APawn* ControlledPawn = GetPawn();
+        if (ControlledPawn)
+        {
+            ActiveAINode->OnTickNode(this, ControlledPawn, DeltaTime);
+        }
+    }
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 }
 
 /**
@@ -129,6 +149,7 @@ void AMC_EnemyAIController::OnUnPossess()
 {
     Super::OnUnPossess();
 
+<<<<<<< HEAD
     if (StateTreeAIComponent)
     {
         StateTreeAIComponent->StopStateTree();
@@ -141,6 +162,10 @@ void AMC_EnemyAIController::OnUnPossess()
     HearingConfig = nullptr;
     DamageConfig = nullptr;
     PredictionConfig = nullptr;
+=======
+    OwningCharacter = nullptr; // Clear the reference to the character
+    AcquiredTarget = nullptr; // Clear the acquired target
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 }
 
 /**
@@ -196,9 +221,13 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         CurrentStimulusSenseType = EMC_StimulusSenseType::Damage;
         if (Stimulus.WasSuccessfullySensed())
         {
+<<<<<<< HEAD
             AcquiredTarget = SensedActor; // Update acquired target on hearing
             OnDamageStimulusDetected(SensedActor, Stimulus);
             OnDamageStimulusEvent.Broadcast(SensedActor, Stimulus);
+=======
+            OnDamageStimulusDetected(SensedActor, Stimulus);
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
         }
     }
     else if (Stimulus.Type == SightID)
@@ -206,6 +235,7 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         CurrentStimulusSenseType = EMC_StimulusSenseType::Sight;
         if (Stimulus.WasSuccessfullySensed())
         {
+<<<<<<< HEAD
             AcquiredTarget = SensedActor; // Update acquired target on hearing
             OnSightStimulusDetected(SensedActor, Stimulus);
             OnSightStimulusEvent.Broadcast(SensedActor, Stimulus);
@@ -215,6 +245,13 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
             AcquiredTarget = nullptr; // Clear acquired target on forgetting
             OnSightStimulusForgotten(SensedActor);
             OnSightStimulusForgottenEvent.Broadcast(SensedActor);
+=======
+            OnSightStimulusDetected(SensedActor, Stimulus);
+        }
+        else
+        {
+            OnSightStimulusForgotten(SensedActor);
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
         }
     }
     else if (Stimulus.Type == HearingID)
@@ -222,6 +259,7 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         CurrentStimulusSenseType = EMC_StimulusSenseType::Hearing;
         if (Stimulus.WasSuccessfullySensed())
         {
+<<<<<<< HEAD
             AcquiredTarget = SensedActor; // Update acquired target on hearing
             OnHearingStimulusDetected(SensedActor, Stimulus);
             OnHearingStimulusEvent.Broadcast(SensedActor, Stimulus);
@@ -231,6 +269,13 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
             AcquiredTarget = nullptr; // Clear acquired target on forgetting
             OnHearingStimulusForgotten(SensedActor);
             OnHearingStimulusForgottenEvent.Broadcast(SensedActor);
+=======
+            OnHearingStimulusDetected(SensedActor, Stimulus);
+        }
+        else
+        {
+            OnHearingStimulusForgotten(SensedActor);
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
         }
     }
 }
@@ -242,8 +287,11 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
 */
 void AMC_EnemyAIController::OnTargetPerceptionForgotten(AActor* Actor)
 {
+<<<<<<< HEAD
     OnSightStimulusForgottenEvent.Broadcast(Actor);
     OnHearingStimulusForgottenEvent.Broadcast(Actor);
+=======
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     OnSightStimulusForgotten(Actor); // Broadcast sight stimulus forgotten event
     OnHearingStimulusForgotten(Actor); // Broadcast hearing stimulus forgotten event
 }
@@ -466,3 +514,56 @@ void AMC_EnemyAIController::OnHearingStimulusForgotten_Implementation(AActor* Ac
 {
     UE_LOG(LogTemp, Verbose, TEXT("[AIController] Hearing stimulus forgotten for actor: %s"), *GetNameSafe(Actor));
 }
+<<<<<<< HEAD
+=======
+
+/*
+ * ========================================================================
+ * AI State Management functions
+ * ========================================================================
+ */
+
+void AMC_EnemyAIController::SetAIState(EMC_AIState NewState, bool bLogChange)
+{
+    if (CurrentAIState == NewState)
+        return;
+
+    EMC_AIState OldState = CurrentAIState;
+    PreviousAIState = CurrentAIState;
+    CurrentAIState = NewState;
+
+    if (bLogChange)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[EnemyAIController] State changed: %s → %s"),
+            *UEnum::GetValueAsString(OldState),
+            *UEnum::GetValueAsString(NewState));
+    }
+
+    // Notify Blueprint
+    OnAIStateChanged(OldState, NewState);
+}
+
+void AMC_EnemyAIController::SetAISubState(EMC_AISubState NewSubState, bool bLogChange)
+{
+    if (CurrentAISubState == NewSubState)
+        return;
+
+    EMC_AISubState OldSubState = CurrentAISubState;
+    CurrentAISubState = NewSubState;
+
+    if (bLogChange)
+    {
+        UE_LOG(LogTemp, Verbose, TEXT("[EnemyAIController] SubState changed: %s → %s"),
+            *UEnum::GetValueAsString(OldSubState),
+            *UEnum::GetValueAsString(NewSubState));
+    }
+
+    // Notify Blueprint
+    OnAISubStateChanged(OldSubState, NewSubState);
+}
+
+void AMC_EnemyAIController::SetActiveAINode(UMC_AINodeBase* Node)
+{
+    ActiveAINode = Node;
+}
+>>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
