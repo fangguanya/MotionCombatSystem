@@ -1,4 +1,19 @@
-
+/*
+ * ========================================================================
+ * Copyright © 2025 God's Studio
+ * All Rights Reserved.
+ *
+ * Free for all to use, copy, and distribute. I hope you learn from this as I learned creating it.
+ * =============================================================================
+ *
+ * Project: Motion Combat System
+ * This is a combat system inspired by Unreal Engine’s Motion Matching plugin.
+ * Author: Christopher D. Parker
+ * Date: 11-11-2025
+ * =============================================================================
+ * MC_StateTreeAIComponent.cpp
+ * Custom State Tree AI Component for Motion Combat.
+ */
 
 #include <Components/MC_StateTreeAIComponent.h>
 #include "StateTreeSchema.h"

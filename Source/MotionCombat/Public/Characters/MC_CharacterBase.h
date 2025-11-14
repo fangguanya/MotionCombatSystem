@@ -1,24 +1,32 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * ========================================================================
+ * Copyright © 2025 God's Studio
+ * All Rights Reserved.
+ *
+ * Free for all to use, copy, and distribute. I hope you learn from this as I learned creating it.
+ * =============================================================================
+ *
+ * Project: Motion Combat System
+ * This is a combat system inspired by Unreal Engine’s Motion Matching plugin.
+ * Author: Christopher D. Parker
+ * Date: 11-11-2025
+ * =============================================================================
+ * MC_CharacterBase.h
+ * Base character class for Motion Combat.
+ */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "StateTreeReference.h"
-<<<<<<< HEAD
 #include "GenericTeamAgentInterface.h"
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 #include "MC_CharacterBase.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (MotionCombatSystem),
 	meta = (DisplayName = "Motion Combat Character Base", ShortTooltip = "Base character class for Motion Combat.")
 )
-<<<<<<< HEAD
 class MOTIONCOMBAT_API AMC_CharacterBase : public ACharacter, public IGenericTeamAgentInterface
-=======
-class MOTIONCOMBAT_API AMC_CharacterBase : public ACharacter
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 {
 	GENERATED_BODY()
 
@@ -26,12 +34,9 @@ public:
 	// Sets default values for this character's properties
 	AMC_CharacterBase();
 
-<<<<<<< HEAD
-=======
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -62,7 +67,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Player|AI", meta = (DisplayName = "Get State Tree", ReturnDisplayName = "State Tree"))
 	UStateTree* GetStateTree() { return StateTree; }
 
-<<<<<<< HEAD
 	/** IGenericTeamAgentInterface override */
 	virtual FGenericTeamId GetGenericTeamId() const override
 	{
@@ -84,18 +88,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Team")
 	uint8 TeamID = 1;  // Default = Player team. Enemies can override in BP to 2, 3, etc.
 
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-<<<<<<< HEAD
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 private:
 
 	/*

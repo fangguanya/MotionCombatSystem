@@ -10,6 +10,7 @@
  * Author: Christopher D. Parker
  * Date: 11-10-2025
  * =============================================================================
+ * MC_EnemyAIController.h
  * Custom AI Controller for Enemy Characters (StateTree-ready)
  */
 
@@ -29,10 +30,7 @@
 #include <Characters/MC_CharacterBase.h>
 #include <Enums/MC_StimulusSenseType.h>
 #include <Enums/MC_AIStateEnums.h>
-<<<<<<< HEAD
-#include <Components/MC_StateTreeAIComponent.h">
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
+#include <Components/MC_StateTreeAIComponent.h>
 #include "MC_EnemyAIController.generated.h"
 
 
@@ -58,7 +56,6 @@ public:
     // Constructor
     AMC_EnemyAIController();
 
-<<<<<<< HEAD
     // Returns the State Tree AI Component for this character
     // This component handles the AI behavior for the enemy character.
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI", meta = (DisplayName = "Get State Tree AI Component"))
@@ -69,21 +66,6 @@ public:
      * @return The current stimulus sense type.
     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI", meta = (DisplayName = "Get Current Stimulus Sense Type"))
-=======
-    /** Called when the game starts or when spawned */
-    virtual void BeginPlay() override;
-
-    /** Called every frame. */
-    virtual void Tick(float DeltaTime) override;
-
-    /** Called when the controller possesses a pawn */
-    virtual void OnPossess(APawn* InPawn) override;
-
-    /** Called when the controller is unpossessed */
-    virtual void OnUnPossess() override;
-
-    UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get Current Stimulus Sense Type"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     EMC_StimulusSenseType GetCurrentStimulusSenseType() const { return CurrentStimulusSenseType; };
 
     /**
@@ -109,11 +91,7 @@ public:
      * Gets the owning character.
      * @return The owning character.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI", meta = (DisplayName = "Get Owning Character"))
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI", meta = (DisplayName = "Get Owning Character"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     AMC_CharacterBase* GetOwningCharacter() const
     {
         return OwningCharacter;
@@ -123,22 +101,14 @@ public:
      * Forget a specific actor from perception.
      * @param ActorToForget The actor to forget.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void ForgetPerceptionActor(AActor* ActorToForget);
 
     /**
      * Forget multiple actors from perception.
      * @param ActorsToForget The array of actors to forget.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void ForgetPerceptionActors(const TArray<AActor*>& ActorsToForget);
 
     /**
@@ -146,11 +116,7 @@ public:
      * This function retrieves all actors that have been sensed by the Damage sense.
      * @return An array of actors currently sensed by the Damage sense.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     TArray<AActor*> GetAllDamageSensedActors() const;
 
     /**
@@ -158,11 +124,7 @@ public:
      * This function retrieves all actors that have been sensed by the Hearing sense.
      * @return An array of actors currently sensed by the Hearing sense.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     TArray<AActor*> GetAllHeardActors() const;
 
     /**
@@ -170,11 +132,7 @@ public:
      * This function retrieves all actors that have been sensed by the Sight sense.
      * @return An array of actors currently sensed by the Sight sense.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
-=======
-    UFUNCTION(BlueprintCallable, Category = "Player|AI")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     TArray<AActor*> GetAllSeenActors() const;
 
     /**
@@ -184,11 +142,7 @@ public:
      * @param InstigatorActor The actor that caused the damage.
      * @param DamageAmount The amount of damage inflicted.
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|Perception")
-=======
-    UFUNCTION(BlueprintCallable, Category = "AI|Perception")
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void ReportDamageEvent(AActor* DamagedActor, AActor* InstigatorActor, float DamageAmount);
 
     /**
@@ -199,19 +153,11 @@ public:
      * @param Loudness The loudness of the noise (default is 1.0).
      * @param MaxRange The maximum range of the noise (default is 1200.0).
     */
-<<<<<<< HEAD
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|Perception")
     void ReportNoiseEvent(AActor* NoiseInstigator, FVector NoiseLocation, float Loudness = 1.f, float MaxRange = 1200.f);
 
     /*
      * Native Events
-=======
-    UFUNCTION(BlueprintCallable, Category = "AI|Perception")
-    void ReportNoiseEvent(AActor* NoiseInstigator, FVector NoiseLocation, float Loudness = 1.f, float MaxRange = 1200.f);
-
-    /*
-     * Events
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     */
 
     /**
@@ -219,11 +165,7 @@ public:
      * @param SensedActor The actor associated with the stimulus.
      * @param Stimulus The stimulus data containing perception info.
      */
-<<<<<<< HEAD
     UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|AI|Events", meta = (DisplayName = "On Damage Stimulus Detected"))
-=======
-    UFUNCTION(BlueprintNativeEvent, Category = "Player|AI|Events", meta = (DisplayName = "On Damage Stimulus Detected"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void OnDamageStimulusDetected(AActor* SensedActor, const FAIStimulus& Stimulus);
     virtual void OnDamageStimulusDetected_Implementation(AActor* SensedActor, const FAIStimulus& Stimulus);
 
@@ -232,11 +174,7 @@ public:
      * @param SensedActor The actor associated with the stimulus.
      * @param Stimulus The stimulus data containing perception info.
      */
-<<<<<<< HEAD
     UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|AI|Events", meta = (DisplayName = "On Sight Stimulus Detected"))
-=======
-    UFUNCTION(BlueprintNativeEvent, Category = "Player|AI|Events", meta = (DisplayName = "On Sight Stimulus Detected"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void OnSightStimulusDetected(AActor* SensedActor, const FAIStimulus& Stimulus);
     virtual void OnSightStimulusDetected_Implementation(AActor* SensedActor, const FAIStimulus& Stimulus);
 
@@ -244,11 +182,7 @@ public:
      * Called when a sight stimulus is forgotten.
      * @param Actor The actor that was forgotten.
      */
-<<<<<<< HEAD
     UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|AI|Events", meta = (DisplayName = "On Sight Stimulus Forgotten"))
-=======
-    UFUNCTION(BlueprintNativeEvent, Category = "Player|AI|Events", meta = (DisplayName = "On Sight Stimulus Forgotten"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void OnSightStimulusForgotten(AActor* Actor);
     virtual void OnSightStimulusForgotten_Implementation(AActor* Actor);
 
@@ -257,11 +191,7 @@ public:
      * @param SensedActor The actor associated with the stimulus.
      * @param Stimulus The stimulus data containing perception info.
      */
-<<<<<<< HEAD
     UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|AI|Events", meta = (DisplayName = "On Hearing Stimulus Detected"))
-=======
-    UFUNCTION(BlueprintNativeEvent, Category = "Player|AI|Events", meta = (DisplayName = "On Hearing Stimulus Detected"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     void OnHearingStimulusDetected(AActor* SensedActor, const FAIStimulus& Stimulus);
     virtual void OnHearingStimulusDetected_Implementation(AActor* SensedActor, const FAIStimulus& Stimulus);
 
@@ -269,11 +199,8 @@ public:
      * Called when a hearing stimulus is forgotten.
      * @param Actor The actor that was forgotten.
      */
-<<<<<<< HEAD
     UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|AI|Events", meta = (DisplayName = "On Hearing Stimulus Forgotten"))
-=======
-    UFUNCTION(BlueprintNativeEvent, Category = "Player|AI|Events", meta = (DisplayName = "On Hearing Stimulus Forgotten"))
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
+
     void OnHearingStimulusForgotten(AActor* Actor);
     virtual void OnHearingStimulusForgotten_Implementation(AActor* Actor);
 
@@ -289,7 +216,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Output, meta = (AllowPrivateAccess = "true"))
     TObjectPtr<AActor> AcquiredTarget = nullptr;
 
-<<<<<<< HEAD
     /*
      * Assignable Events
     */
@@ -308,43 +234,6 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Motion Combat|AI|Perception")
     FMCStimulusForgottenSignature OnHearingStimulusForgottenEvent;
-=======
-    // ==============================
-    //  AI State Management
-    // ==============================
-
-    /** Current major state (Idle, Patrol, Combat, etc.) */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|State")
-    EMC_AIState CurrentAIState = EMC_AIState::Idle;
-
-    /** Previously active major state */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI|State")
-    EMC_AIState PreviousAIState = EMC_AIState::Idle;
-
-    /** Optional: Substate (Engage, Attack, Retreat) */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|State")
-    EMC_AISubState CurrentAISubState = EMC_AISubState::None;
-
-    /** Change AI state and optionally broadcast to Blueprint */
-    UFUNCTION(BlueprintCallable, Category = "AI|State")
-    void SetAIState(EMC_AIState NewState, bool bLogChange = true);
-
-    /** Change AI substate and optionally broadcast to Blueprint */
-    UFUNCTION(BlueprintCallable, Category = "AI|State")
-    void SetAISubState(EMC_AISubState NewSubState, bool bLogChange = true);
-
-    /** Blueprint event triggered when AI state changes */
-    UFUNCTION(BlueprintImplementableEvent, Category = "AI|State", meta = (DisplayName = "On AI State Changed"))
-    void OnAIStateChanged(EMC_AIState OldState, EMC_AIState NewState);
-
-    /** Blueprint event triggered when AI substate changes */
-    UFUNCTION(BlueprintImplementableEvent, Category = "AI|State", meta = (DisplayName = "On AI SubState Changed"))
-    void OnAISubStateChanged(EMC_AISubState OldSubState, EMC_AISubState NewSubState);
-
-    /** Registers an active AI node for ticking. */
-    UFUNCTION(BlueprintCallable, Category = "AI|Node", meta = (DisplayName = "Set Active AI Node"))
-    void SetActiveAINode(UMC_AINodeBase* Node);
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 
 protected:
 
@@ -352,7 +241,6 @@ protected:
      * Functions
     */
 
-<<<<<<< HEAD
     /** Called when the game starts or when spawned */
     virtual void BeginPlay() override;
 
@@ -368,8 +256,6 @@ protected:
     /** Called when the controller is unpossessed */
     virtual void OnUnPossess() override;
 
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     // Perception updated callback
     UFUNCTION()
     void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
@@ -382,14 +268,11 @@ private:
      * Properties
     */
 
-<<<<<<< HEAD
     // State tree AI component for managing enemy AI behavior
     // This component handles the AI behavior for the enemy character.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Combat|AI", meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UMC_StateTreeAIComponent> StateTreeAIComponent;
 
-=======
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
     /** Enemy character this controller is managing */
     TObjectPtr<AMC_CharacterBase> OwningCharacter = nullptr;
 
@@ -411,12 +294,4 @@ private:
 
     UPROPERTY()
     EMC_StimulusSenseType CurrentStimulusSenseType = EMC_StimulusSenseType::Unknown;
-<<<<<<< HEAD
-=======
-
-    /** Currently active AI Node (if any). */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI|Node", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UMC_AINodeBase> ActiveAINode;
-
->>>>>>> 902d32c0cd9fd8fe7853cd9d04ad2d494ac8afd8
 };

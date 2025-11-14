@@ -1,4 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+ * ========================================================================
+ * Copyright © 2025 God's Studio
+ * All Rights Reserved.
+ *
+ * Free for all to use, copy, and distribute. I hope you learn from this as I learned creating it.
+ * =============================================================================
+ *
+ * Project: Motion Combat System
+ * This is a combat system inspired by Unreal Engine’s Motion Matching plugin.
+ * Author: Christopher D. Parker
+ * Date: 11-11-2025
+ * =============================================================================
+ * MC_CharacterBase.cpp
+ * Base character class for Motion Combat.
+ */
 
 
 #include "Characters/MC_CharacterBase.h"
