@@ -119,7 +119,7 @@ FString UMCS_TargetingSubsystem::MakeWorldTag() const
 
 void UMCS_TargetingSubsystem::RegisterTarget(AActor* TargetActor)
 {
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
     {
         if (bDebug)
         {
@@ -158,7 +158,7 @@ void UMCS_TargetingSubsystem::RegisterTarget(AActor* TargetActor)
 
 void UMCS_TargetingSubsystem::UnregisterTarget(AActor* TargetActor)
 {
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
         return;
 
     int32 Removed = RegisteredTargets.RemoveAll([ TargetActor ] (const FMCS_TargetInfo& Info)

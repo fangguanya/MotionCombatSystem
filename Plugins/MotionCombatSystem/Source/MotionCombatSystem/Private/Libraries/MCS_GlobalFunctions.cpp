@@ -30,7 +30,7 @@
  */
 bool UMCS_GlobalFunctions::IsActorFacingTarget(const AActor* ActorA, const AActor* ActorB, float ToleranceDegrees)
 {
-    if (!ActorA || !ActorB)
+    if (!IsValid(ActorA) || !IsValid(ActorB))
         return false;
 
     // ActorA’s forward vector and normalized direction to ActorB
@@ -49,7 +49,7 @@ bool UMCS_GlobalFunctions::IsActorFacingTarget(const AActor* ActorA, const AActo
  */
 float UMCS_GlobalFunctions::GetAngleBetweenActors(const AActor* ActorA, const AActor* ActorB)
 {
-    if (!ActorA || !ActorB)
+    if (!IsValid(ActorA) || !IsValid(ActorB))
         return 0.f;
 
     const FVector Forward = ActorA->GetActorForwardVector();
@@ -78,7 +78,7 @@ FVector UMCS_GlobalFunctions::GetDirectionToTarget(const AActor* FromActor, cons
  */
 float UMCS_GlobalFunctions::GetDistance2D(const AActor* ActorA, const AActor* ActorB)
 {
-    if (!ActorA || !ActorB)
+    if (!IsValid(ActorA) || !IsValid(ActorB))
         return 0.f;
 
     return FVector::Dist2D(ActorA->GetActorLocation(), ActorB->GetActorLocation());

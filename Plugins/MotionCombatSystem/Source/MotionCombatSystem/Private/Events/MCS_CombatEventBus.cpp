@@ -49,5 +49,16 @@ UMCS_CombatEventBus* UMCS_CombatEventBus::Get(UWorld* World)
 UMCS_CombatEventBus* UMCS_CombatEventBus::GetCombatEventBus(const UObject* WorldContextObject)
 {
     if (!WorldContextObject) return nullptr;
+
     return Get(WorldContextObject->GetWorld());
+}
+
+/**
+ * Cleans up the event bus instance when the object is being destroyed
+ */
+void UMCS_CombatEventBus::BeginDestroy()
+{
+    BusInstances.Remove(GetWorld());
+
+    Super::BeginDestroy();
 }

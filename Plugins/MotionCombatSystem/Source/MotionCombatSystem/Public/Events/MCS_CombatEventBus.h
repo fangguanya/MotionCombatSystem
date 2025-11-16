@@ -34,6 +34,10 @@ class MOTIONCOMBATSYSTEM_API UMCS_CombatEventBus : public UObject
 
 public:
 
+    /*
+     * Properties
+     */
+
     /**
      * Returns or creates the global Combat Event Bus for this world
      * @param World The UWorld context
@@ -47,6 +51,12 @@ public:
      */
     UFUNCTION(BlueprintPure, Category = "MCS|Events", meta = (WorldContext = "WorldContextObject"))
     static UMCS_CombatEventBus* GetCombatEventBus(const UObject* WorldContextObject);
+
+    /*
+     * Functions
+     */
+
+    void BeginDestroy() override;
 
     // ==========================================================
     //  Delegates
