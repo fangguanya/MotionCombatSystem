@@ -26,7 +26,7 @@
 #include "AnimNotifyState_MCSWindow.generated.h"
 
 
- /**
+/**
  * Enum describing what type of MCS event this notify represents.
  */
 UENUM(BlueprintType, Category = "MotionCombatSystem", Meta = (DisplayName = "Motion Combat Anim Event Type"))
@@ -71,7 +71,7 @@ public:
      * Properties
      */
 
-     /** Optional unique ID for this notify */
+    /** Optional unique ID for this notify */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MCS", Meta = (DisplayName = "Unique ID"))
     FName Id = NAME_None;
     
@@ -180,6 +180,10 @@ public:
 
         OnNotifyEnd.Broadcast(EventType, this);
         OnMCSNotifyEnd(MeshComp, Animation, EventType);
+
+        OnNotifyBegin.Clear();
+        OnNotifyTick.Clear();
+        OnNotifyEnd.Clear();
 
         if (bDebug)
         {

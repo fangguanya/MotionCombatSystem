@@ -53,10 +53,10 @@ void UMCS_CombatHitReactionComponent::PerformHitReaction(const FHitResult& Hit, 
         return;
     }
 
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
     {
         TargetActor = GetOwner();
-        if (!TargetActor)
+        if (!IsValid(TargetActor))
         {
             UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Invalid TargetActor."));
             return;
@@ -175,7 +175,7 @@ void UMCS_CombatHitReactionComponent::PlayMontageInternal(UAnimMontage* Montage,
         return;
 
     ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner());
-    if (!CharacterOwner || !CharacterOwner->GetMesh())
+    if (!IsValid(CharacterOwner) || !IsValid(CharacterOwner->GetMesh()))
     {
         UE_LOG(LogTemp, Warning, TEXT("[HitReaction] Invalid Character or Mesh."));
         return;
@@ -201,7 +201,7 @@ void UMCS_CombatHitReactionComponent::PlayMontageInternal(UAnimMontage* Montage,
  */
 EMCS_Direction UMCS_CombatHitReactionComponent::CalculateHitDirection(const FVector& HitLocation, AActor* TargetActor)
 {
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
         return EMCS_Direction::None;
 
     const FVector ActorLocation = TargetActor->GetActorLocation();

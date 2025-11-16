@@ -101,6 +101,17 @@ void UMCS_CombatDefenseComponent::EndPlay(const EEndPlayReason::Type EndPlayReas
         }
     }
 
+    LastParrySource = nullptr;
+    bIsInParryWindow = false;
+    bIsInDefenseWindow = false;
+
+    // Clear delegates
+    OnParryOpportunity.Clear();
+    OnParrySuccess.Clear();
+    OnParryFail.Clear();
+    OnDefenseWindowActive.Clear();
+    OnDefenseSuccess.Clear();
+    OnDefenseFail.Clear();
 }
 
 /**

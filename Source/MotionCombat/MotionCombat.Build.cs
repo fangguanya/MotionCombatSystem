@@ -21,7 +21,8 @@ public class MotionCombat : ModuleRules
 			"GameplayStateTreeModule",
 			"AIModule",
 			"GameplayTags",
-			"NavigationSystem"
+			"NavigationSystem",
+			"MotionCombatSystem"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

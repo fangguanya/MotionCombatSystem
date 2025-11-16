@@ -29,7 +29,8 @@ UMCS_AttackChooser::UMCS_AttackChooser(const FObjectInitializer& ObjectInitializ
 
 /* ==========================================================
  * Attack Selection & Scoring Implementations
- * ========================================================== */
+ * ========================================================== 
+ */
 
 /*
  * Attack Selection
@@ -43,7 +44,6 @@ bool UMCS_AttackChooser::ChooseAttack(
 {
     if (AttackEntries.IsEmpty())
     {
-        // UE_LOG(LogTemp, Warning, TEXT("[MCS_AttackChooser] No attacks to choose from."));
         return false;
     }
 
@@ -161,7 +161,6 @@ float UMCS_AttackChooser::ScoreAttack_Implementation(
     return AggregateScore;
 }
 
-
 /* ==========================================================
  * BlueprintPure Helper Implementations
  * ========================================================== */
@@ -195,7 +194,7 @@ float UMCS_AttackChooser::ComputeTagScore(const FMCS_AttackEntry& Entry) const
 float UMCS_AttackChooser::ComputeDistanceScore(const FMCS_AttackEntry& Entry, AActor* Instigator, const TArray<AActor*>& Targets) const
 {
     // Guard checks
-    if (!Instigator || Targets.IsEmpty())
+    if (!IsValid(Instigator) || Targets.IsEmpty())
         return 0.f;
 
     AActor* ClosestTarget = nullptr;
@@ -377,9 +376,7 @@ float UMCS_AttackChooser::AggregateScore(float BaseScore, float TagScore, float 
   */
 bool UMCS_AttackChooser::IsEntryAllowedByBasicFilters(const FMCS_AttackEntry& Entry, AActor* Instigator, const TArray<AActor*>& Targets) const
 {
-    if (!Instigator)
-        return true;
-    if (Targets.IsEmpty())
+    if (!IsValid(Instigator) || Targets.IsEmpty())
         return true;
 
     const FVector InstigatorLoc = Instigator->GetActorLocation();
@@ -427,6 +424,6 @@ float UMCS_AttackChooser::QueryAttributeValue(FName Attribute, const FMCS_Attack
 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
 void UMCS_AttackChooser::ClearDebugScores() const
 {
-    DebugScores.Reset();
+    DebugScores.Empty();
 }
 #endif

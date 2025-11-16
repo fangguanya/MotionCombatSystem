@@ -22,11 +22,18 @@
 #include "StateTreeReference.h"
 #include "GenericTeamAgentInterface.h"
 #include <Components/MC_HealthComponent.h>
+#include <Components/MCS_CombatCoreComponent.h>
+#include <Components/MCS_CombatHitboxComponent.h>
+#include <Components/MCS_CombatDefenseComponent.h>
+#include <Components/MCS_CombatHitReactionComponent.h>
 #include "MC_CharacterBase.generated.h"
 
+
+/**
+ * Base character class for Motion Combat.
+ */
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (MotionCombat),
-	meta = (DisplayName = "Motion Combat Character Base",
-		ShortTooltip = "Base character class for Motion Combat.")
+	meta = (DisplayName = "Motion Combat Character Base", ShortTooltip = "Base character class for Motion Combat.")
 )
 class MOTIONCOMBAT_API AMC_CharacterBase : public ACharacter, public IGenericTeamAgentInterface
 {
@@ -37,7 +44,7 @@ public:
 	/*
 	* Functions
 	*/
-	
+
 	// Sets default values for this character's properties
 	AMC_CharacterBase();
 
@@ -138,18 +145,50 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Motion Combat|Health", meta = (DisplayName = "Get Current Health", ReturnDisplayName = "Current Health"))
 	float GetHealth() const
 	{
-		if (HealthComponent)
+		if (IsValid(HealthComponent))
 		{
 			return HealthComponent->CurrentHealth;
 		}
 		return 0.f;
 	}
 
+	// Get the combat core component
+	UFUNCTION(BlueprintPure, Category = "Motion Combat System|Components", 
+		meta = (DisplayName = "Get Combat Core Component", ReturnDisplayName = "Combat Core Component"))
+	UMCS_CombatCoreComponent* GetCombatCoreComponent() const
+	{
+		return CombatCoreComponent;
+	}
+
+	// Get the combat hitbox component
+	UFUNCTION(BlueprintPure, Category = "Motion Combat System|Components", 
+		meta = (DisplayName = "Get Combat Hitbox Component", ReturnDisplayName = "Combat Hitbox Component"))
+	UMCS_CombatHitboxComponent* GetCombatHitboxComponent() const
+	{
+		return CombatHitboxComponent;
+	}
+
+	// Get the combat defense component
+	UFUNCTION(BlueprintPure, Category = "Motion Combat System|Components", 
+		meta = (DisplayName = "Get Combat Defense Component", ReturnDisplayName = "Combat Defense Component"))
+	UMCS_CombatDefenseComponent* GetCombatDefenseComponent() const
+	{
+		return CombatDefenseComponent;
+	}
+
+	// Get the combat hit reaction component
+	UFUNCTION(BlueprintPure, Category = "Motion Combat System|Components", 
+		meta = (DisplayName = "Get Combat Hit Reaction Component", ReturnDisplayName = "Combat Hit Reaction Component"))
+	UMCS_CombatHitReactionComponent* GetCombatHitReactionComponent() const
+	{
+		return CombatHitReactionComponent;
+	}
+
 	/*
 	 * Event Handlers
 	 */
 
-	/** Called when character health is updated */
+	 /** Called when character health is updated */
 	UFUNCTION(BlueprintNativeEvent, Category = "Motion Combat|Health")
 	void OnCharacterHealthChanged(float NewHealth, float MaxHealth);
 	virtual void OnCharacterHealthChanged_Implementation(float NewHealth, float MaxHealth);
@@ -167,14 +206,22 @@ public:
 	/*
 	 * Properties
 	 */
-	
-	/** Team identifier for AI perception & hostility logic */
+
+	 /** Team identifier for AI perception & hostility logic */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI|Team")
 	uint8 TeamID = 1;  // Default = Player team. Enemies can override in BP to 2, 3, etc.
 
 protected:
+
+	/*
+	* Functions
+	*/
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Called when the game ends or actor is destroyed
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 
@@ -193,7 +240,27 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|AI", meta = (AllowPrivateAccess = "true"))
 	UStateTree* StateTree;
 
+	/* ----------------
+	 * Components
+	---------------- */
+
 	// Reference to the health component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Health", meta = (AllowPrivateAccess = "true"))
-	UMC_HealthComponent* HealthComponent;
+	TObjectPtr<UMC_HealthComponent> HealthComponent;
+
+	// Combat system core component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Combat|Components", meta = (AllowPrivateAccess = "true", DisplayName = "Combat Core Component"))
+	TObjectPtr<UMCS_CombatCoreComponent> CombatCoreComponent;
+
+	// Combat hitbox component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Combat|Components", meta = (AllowPrivateAccess = "true", DisplayName = "Combat Hitbox Component"))
+	TObjectPtr<UMCS_CombatHitboxComponent> CombatHitboxComponent;
+
+	// Combat defense component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Combat|Components", meta = (AllowPrivateAccess = "true", DisplayName = "Combat Defense Component"))
+	TObjectPtr<UMCS_CombatDefenseComponent> CombatDefenseComponent;
+
+	// Combat hit reaction component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Combat|Components", meta = (AllowPrivateAccess = "true", DisplayName = "Combat Hit Reaction Component"))
+	TObjectPtr<UMCS_CombatHitReactionComponent> CombatHitReactionComponent;
 };

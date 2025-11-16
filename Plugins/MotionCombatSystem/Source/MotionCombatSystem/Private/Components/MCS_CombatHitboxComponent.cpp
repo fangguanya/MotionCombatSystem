@@ -34,6 +34,11 @@ void UMCS_CombatHitboxComponent::TickComponent(float DeltaTime, ELevelTick TickT
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+    if (GetWorld()->bIsTearingDown || !IsValid(GetOwner()))
+    {
+        return;
+    }
+
     if (bIsDetecting)
     {
         PerformSweep();
@@ -68,6 +73,9 @@ void UMCS_CombatHitboxComponent::StopHitDetection()
 
 void UMCS_CombatHitboxComponent::PerformSweep()
 {
+    if (!IsValid(GetOwner()))
+        return;
+
     // Get mesh component
     USkeletalMeshComponent* Mesh = ResolveMesh();
 

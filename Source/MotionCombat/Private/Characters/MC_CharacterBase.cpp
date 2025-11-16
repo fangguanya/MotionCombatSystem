@@ -26,6 +26,18 @@ AMC_CharacterBase::AMC_CharacterBase()
 
 	// Create and attach the health component
 	HealthComponent = CreateDefaultSubobject<UMC_HealthComponent>(TEXT("Health Component"));
+
+	// Create and attach the combat core component
+	CombatCoreComponent = CreateDefaultSubobject<UMCS_CombatCoreComponent>(TEXT("Combat Core Component"));
+
+	// Create and attach the combat hitbox component
+	CombatHitboxComponent = CreateDefaultSubobject<UMCS_CombatHitboxComponent>(TEXT("Combat Hitbox Component"));
+
+	// Create and attach the combat defense component
+	CombatDefenseComponent = CreateDefaultSubobject<UMCS_CombatDefenseComponent>(TEXT("Combat Defense Component"));
+
+	// Create and attach the combat hit reaction component
+	CombatHitReactionComponent = CreateDefaultSubobject<UMCS_CombatHitReactionComponent>(TEXT("Combat Hit Reaction Component"));
 }
 
 // Called when the game starts or when spawned
@@ -45,6 +57,26 @@ void AMC_CharacterBase::BeginPlay()
 void AMC_CharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+/*
+ * Called when the game ends or actor is destroyed
+ * @param EndPlayReason The reason for ending play
+ */
+void AMC_CharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthChanged.RemoveAll(this);
+		HealthComponent->OnDamageTaken.RemoveAll(this);
+		HealthComponent->OnDeath.RemoveAll(this);
+	}
+
+	bIsAttacking = false;
+	bIsDefending = false;
+	bIsDead = false;
+
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called to bind functionality to input

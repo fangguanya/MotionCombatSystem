@@ -84,6 +84,16 @@ void UMCS_CombatCoreComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     // Clear chooser pool
     ClearChooserPool();
 
+    // Clear delegates
+    OnTargetingUpdated.Clear();
+    OnComboWindowBegin.Clear();
+    OnComboWindowEnd.Clear();
+    OnParryWindowBegin.Clear();
+    OnParryWindowEnd.Clear();
+    OnDefenseWindowBegin.Clear();
+    OnDefenseWindowEnd.Clear();
+
+
     Super::EndPlay(EndPlayReason);
 }
 
@@ -106,7 +116,7 @@ void UMCS_CombatCoreComponent::PerformAttack(EMCS_AttackType DesiredType, EMCS_A
     }
 
     ACharacter* CharacterOwner = Cast<ACharacter>(GetOwner());
-    if (!CharacterOwner || !CurrentAttack.HasValidMontage()) return;
+    if (!IsValid(CharacterOwner) || !CurrentAttack.HasValidMontage()) return;
 
     // Cache hitbox component reference
     CachedHitboxComp = CharacterOwner->FindComponentByClass<UMCS_CombatHitboxComponent>();

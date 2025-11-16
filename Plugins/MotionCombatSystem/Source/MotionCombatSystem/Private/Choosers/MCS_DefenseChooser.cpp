@@ -105,7 +105,7 @@ bool UMCS_DefenseChooser::ChooseDefense(AActor* Defender, AActor* Attacker, EMCS
  */
 float UMCS_DefenseChooser::ScoreDefense_Implementation(const FMCS_DefenseEntry& Entry, AActor* Defender, AActor* Attacker, EMCS_DefenseIntent Intent) const
 {
-    if (!Defender || !Attacker)
+    if (!IsValid(Defender) || !IsValid(Attacker))
         return -FLT_MAX;
 
     float TotalScore = 0.0f;
@@ -145,7 +145,7 @@ float UMCS_DefenseChooser::ScoreDefense_Implementation(const FMCS_DefenseEntry& 
  */
 float UMCS_DefenseChooser::ScoreDistance(const FMCS_DefenseEntry& Entry, AActor* Defender, AActor* Attacker) const
 {
-    if (!Defender || !Attacker)
+    if (!IsValid(Defender) || !IsValid(Attacker))
         return 0.0f;
 
     const float Dist = FVector::Dist(Defender->GetActorLocation(), Attacker->GetActorLocation());
@@ -181,7 +181,7 @@ float UMCS_DefenseChooser::ScoreDistance(const FMCS_DefenseEntry& Entry, AActor*
  */
 float UMCS_DefenseChooser::ScoreFacing(const FMCS_DefenseEntry& Entry, AActor* Defender, AActor* Attacker) const
 {
-    if (!Defender || !Attacker)
+    if (!IsValid(Defender) || !IsValid(Attacker))
         return 0.0f;
 
     const FVector ToAttacker = (Attacker->GetActorLocation() - Defender->GetActorLocation()).GetSafeNormal();
@@ -218,7 +218,7 @@ bool UMCS_DefenseChooser::CanAttemptDefense_Implementation(const FMCS_DefenseEnt
  */
 void UMCS_DefenseChooser::DrawDebugDistanceScores(AActor* Defender, AActor* Attacker, float Duration) const
 {
-    if (!Defender || !Attacker)
+    if (!IsValid(Defender) || !IsValid(Attacker))
         return;
 
     const FVector DefenderLoc = Defender->GetActorLocation();
