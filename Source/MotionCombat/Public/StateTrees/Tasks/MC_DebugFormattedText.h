@@ -157,13 +157,16 @@ protected:
     EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition)
     {
         // Resolve world
-        UWorld* World = Actor
-            ? Actor->GetWorld()
-            : Context.GetWorld();
+        UWorld* World = nullptr;
 
+        // Prefer Context world, it's guaranteed valid during task execution
+        World = Context.GetWorld();
+        if (!World && Actor)
+        {
+            World = Actor->GetWorld();
+        }
         if (!World)
         {
-            UE_LOG(LogTemp, Warning, TEXT("UPGAS_DebugFormattedText: No valid World!"));
             return EStateTreeRunStatus::Failed;
         }
 

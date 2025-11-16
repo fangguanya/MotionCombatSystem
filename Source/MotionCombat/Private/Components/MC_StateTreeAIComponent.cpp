@@ -34,11 +34,22 @@ void UMC_StateTreeAIComponent::BeginPlay()
     Super::BeginPlay();
 }
 
-void UMC_StateTreeAIComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-    FActorComponentTickFunction* ThisTickFunction)
-{
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
+//// Called every frame (Uncomment if ticking is needed)
+// void UMC_StateTreeAIComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+// {
+//     // PIE / world teardown safety
+//     if (!IsValid(GetOwner()) || GetWorld()->bIsTearingDown)
+//     {
+//         return;
+//     }
+
+//     if (!IsRunning())
+//     {
+//         return;
+//     }
+
+//     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+// }
 
 /**
  * Called when the controller is ending play.
@@ -75,7 +86,7 @@ void UMC_StateTreeAIComponent::StartStateTree(UStateTree* StateTree)
     {
         if (IsRunning())
         {
-            Cleanup();
+            StopLogic("Switching Trees");
         }
 
         StateTreeRef.SetStateTree(StateTree);
@@ -105,10 +116,15 @@ void UMC_StateTreeAIComponent::StopStateTree()
 */
 void UMC_StateTreeAIComponent::SendEvent(const FGameplayTag& EventTag)
 {
-    if (IsRunning() && LastEventTag != EventTag)
+    if (!IsRunning())
+        return;
+
+    if (!IsValid(GetOwner()) || GetWorld()->bIsTearingDown)
+        return;
+
+    if (LastEventTag != EventTag)
     {
-        LastEventTag = EventTag; // Update the last event tag to prevent duplicates
-        FStateTreeEvent Event = FStateTreeEvent(EventTag);
-        SendStateTreeEvent(Event); // Send the event to the StateTree execution context
+        LastEventTag = EventTag;
+        SendStateTreeEvent(FStateTreeEvent(EventTag));
     }
 }

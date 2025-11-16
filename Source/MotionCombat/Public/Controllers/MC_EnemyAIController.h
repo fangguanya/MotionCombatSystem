@@ -51,7 +51,7 @@ class MOTIONCOMBAT_API AMC_EnemyAIController : public AAIController
 public:
     /*
      * Functions
-    */
+     */
 
     // Constructor
     AMC_EnemyAIController();
@@ -64,7 +64,7 @@ public:
     /**
      * Gets the current stimulus sense type.
      * @return The current stimulus sense type.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI", meta = (DisplayName = "Get Current Stimulus Sense Type"))
     EMC_StimulusSenseType GetCurrentStimulusSenseType() const { return CurrentStimulusSenseType; };
 
@@ -72,7 +72,7 @@ public:
      * Checks if the stimulus is from a hostile actor.
      * @param Actor The actor to check.
      * @return True if the actor is hostile, false otherwise.
-    */
+     */
     bool IsStimulusFromHostile(AActor* Actor) const
     {
         return Actor && GetTeamAttitudeTowards(*Actor) == ETeamAttitude::Hostile;
@@ -81,7 +81,7 @@ public:
     /**
      * Checks if there is an acquired target.
      * @return True if there is an acquired target, false otherwise.
-    */
+     */
     bool HasAcquiredTarget() const
     {
         return AcquiredTarget != nullptr;
@@ -90,7 +90,7 @@ public:
     /**
      * Gets the owning character.
      * @return The owning character.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI", meta = (DisplayName = "Get Owning Character"))
     AMC_CharacterBase* GetOwningCharacter() const
     {
@@ -100,14 +100,14 @@ public:
     /**
      * Forget a specific actor from perception.
      * @param ActorToForget The actor to forget.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
     void ForgetPerceptionActor(AActor* ActorToForget);
 
     /**
      * Forget multiple actors from perception.
      * @param ActorsToForget The array of actors to forget.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
     void ForgetPerceptionActors(const TArray<AActor*>& ActorsToForget);
 
@@ -115,7 +115,7 @@ public:
      * Returns all actors currently sensed by the Damage sense.
      * This function retrieves all actors that have been sensed by the Damage sense.
      * @return An array of actors currently sensed by the Damage sense.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
     TArray<AActor*> GetAllDamageSensedActors() const;
 
@@ -123,7 +123,7 @@ public:
      * Returns all actors currently sensed by the Hearing sense.
      * This function retrieves all actors that have been sensed by the Hearing sense.
      * @return An array of actors currently sensed by the Hearing sense.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
     TArray<AActor*> GetAllHeardActors() const;
 
@@ -131,7 +131,7 @@ public:
      * Returns all actors currently sensed by the Sight sense.
      * This function retrieves all actors that have been sensed by the Sight sense.
      * @return An array of actors currently sensed by the Sight sense.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI")
     TArray<AActor*> GetAllSeenActors() const;
 
@@ -141,7 +141,7 @@ public:
      * @param DamagedActor The actor that was damaged.
      * @param InstigatorActor The actor that caused the damage.
      * @param DamageAmount The amount of damage inflicted.
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|Perception")
     void ReportDamageEvent(AActor* DamagedActor, AActor* InstigatorActor, float DamageAmount);
 
@@ -152,13 +152,37 @@ public:
      * @param NoiseLocation The location where the noise was made.
      * @param Loudness The loudness of the noise (default is 1.0).
      * @param MaxRange The maximum range of the noise (default is 1200.0).
-    */
+     */
     UFUNCTION(BlueprintCallable, Category = "Motion Combat|Perception")
     void ReportNoiseEvent(AActor* NoiseInstigator, FVector NoiseLocation, float Loudness = 1.f, float MaxRange = 1200.f);
 
+    /**
+     * Sends a gameplay event to the StateTree AI Component.
+     * This is used by perception callbacks or any other system that wants to notify the AI.
+     */
+    UFUNCTION(BlueprintCallable, Category = "Motion Combat|AI|StateTree", meta = (DisplayName = "Send StateTree Event"))
+    void SendCombatEvent(const FGameplayTag& EventTag)
+    {
+        if (!StateTreeAIComponent)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[EnemyAIController] SendCombatEvent FAILED – No StateTreeAIComponent attached."));
+            return;
+        }
+
+        if (!EventTag.IsValid())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[EnemyAIController] SendCombatEvent FAILED – Invalid GameplayTag."));
+            return;
+        }
+
+        UE_LOG(LogTemp, Log, TEXT("[EnemyAIController] Sending StateTree Event: %s"), *EventTag.ToString());
+
+        StateTreeAIComponent->SendStateTreeEvent(EventTag);
+    }
+
     /*
      * Native Events
-    */
+     */
 
     /**
      * Called when a damage stimulus is detected.
@@ -206,7 +230,7 @@ public:
 
     /*
      * Properties
-    */
+     */
 
     /**
      * The current acquired target from perception events
@@ -218,7 +242,7 @@ public:
 
     /*
      * Assignable Events
-    */
+     */
 
     UPROPERTY(BlueprintAssignable, Category = "Motion Combat|AI|Perception")
     FMCStimulusEventSignature OnDamageStimulusEvent;
@@ -239,7 +263,7 @@ protected:
 
     /*
      * Functions
-    */
+     */
 
     /** Called when the game starts or when spawned */
     virtual void BeginPlay() override;
@@ -264,9 +288,10 @@ protected:
     void OnTargetPerceptionForgotten(AActor* Actor);
 
 private:
+    
     /*
      * Properties
-    */
+     */
 
     // State tree AI component for managing enemy AI behavior
     // This component handles the AI behavior for the enemy character.

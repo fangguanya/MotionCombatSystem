@@ -51,18 +51,12 @@ void UMCS_TargetingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     }
 
     // Start recurring scan timer
-    CachedWorld->GetTimerManager().SetTimerForNextTick([ this ] ()
-        {
-            if (IsValid(CachedWorld))
-            {
-                CachedWorld->GetTimerManager().SetTimer(
-                    ScanTimerHandle,
-                    this,
-                    &UMCS_TargetingSubsystem::ScanForTargets,
-                    TargetScanInterval,
-                    true);
-            }
-        });
+    CachedWorld->GetTimerManager().SetTimer(
+        ScanTimerHandle,
+        this,
+        &UMCS_TargetingSubsystem::ScanForTargets,
+        TargetScanInterval,
+        true);
 
     // Start with scanning enabled
     bIsScanningEnabled = true;
@@ -84,7 +78,13 @@ void UMCS_TargetingSubsystem::Deinitialize()
 
     ScanTimerHandle.Invalidate();
 
-    // Clear list to avoid stale UObject pointers during GC
+    // Clear delegates (prevents calls to destroyed objects)
+    OnTargetsUpdated.Clear();
+
+    // Reset counters
+    LastTargetCount = 0;
+
+    // Remove all target actor pointers
     RegisteredTargets.Empty();
 
     CachedWorld = nullptr;

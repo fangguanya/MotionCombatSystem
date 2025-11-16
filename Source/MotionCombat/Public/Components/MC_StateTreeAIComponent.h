@@ -70,8 +70,8 @@ protected:
     /** Called when the game starts or when spawned */
     virtual void BeginPlay() override;
 
-    // Called every frame
-    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+    // Called every frame (Uncomment if ticking is needed)
+    // virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
     /** Called when the component is initialized */
     virtual void InitializeComponent() override;

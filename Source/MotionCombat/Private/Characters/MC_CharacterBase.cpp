@@ -15,35 +15,59 @@
  * Base character class for Motion Combat.
  */
 
-
 #include "Characters/MC_CharacterBase.h"
 
-// Sets default values
+
+ // Sets default values
 AMC_CharacterBase::AMC_CharacterBase()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Create and attach the health component
+	HealthComponent = CreateDefaultSubobject<UMC_HealthComponent>(TEXT("Health Component"));
 }
 
 // Called when the game starts or when spawned
 void AMC_CharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthChanged.AddDynamic(this, &AMC_CharacterBase::OnCharacterHealthChanged);
+		HealthComponent->OnDamageTaken.AddDynamic(this, &AMC_CharacterBase::OnCharacterDamageTaken);
+		HealthComponent->OnDeath.AddDynamic(this, &AMC_CharacterBase::OnCharacterDeath);
+	}
 }
 
 // Called every frame
 void AMC_CharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
 void AMC_CharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
+/*
+ * Blueprint Native Event Implementations
+ */
+
+void AMC_CharacterBase::OnCharacterHealthChanged_Implementation(float NewHealth, float MaxHealth)
+{
+	// Default = do nothing (BP override handles behavior)
+}
+
+void AMC_CharacterBase::OnCharacterDamageTaken_Implementation(float DamageAmount, float NewHealth, AActor* InstigatorActor)
+{
+	// Default = do nothing
+}
+
+void AMC_CharacterBase::OnCharacterDeath_Implementation(AActor* DeadActor)
+{
+	// Default = do nothing
+}

@@ -181,9 +181,11 @@ private:
     */
 
     // Cached movement component pointer (game thread only)
+    UPROPERTY()
     TObjectPtr<const UCharacterMovementComponent> CachedMovementComponent;
 
     // Cached pawn pointer (game thread only)
+    UPROPERTY()
     TObjectPtr<APawn> OwningPawn;
 
     // Cached player character pointer (game thread only)
@@ -192,4 +194,7 @@ private:
 
     // Cached actor rotation (game thread only)
     FRotator OwningPawnActorRotation = FRotator::ZeroRotator;
+
+    UPROPERTY()
+    float GroundDistance = -1.0f;
 };

@@ -21,10 +21,10 @@
 #include "StateTreePropertyBindings.h"
 
 
-/**
- * Constructor
- * This sets up the AI Controller with perception components and state tree component.
- */
+ /**
+   * Constructor
+   * This sets up the AI Controller with perception components and state tree component.
+   */
 AMC_EnemyAIController::AMC_EnemyAIController()
 {
     bAttachToPawn = true; // Attach controller to pawn
@@ -101,8 +101,27 @@ void AMC_EnemyAIController::Tick(float DeltaTime)
  */
 void AMC_EnemyAIController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    // Stop StateTree processing
+    if (StateTreeAIComponent)
+    {
+        StateTreeAIComponent->StopStateTree();
+    }
+
+    // Clear acquired target & owner reference
+    AcquiredTarget = nullptr;
+    OwningCharacter = nullptr;
+
+    // Clear all blueprint-assignable delegates
+    OnDamageStimulusEvent.Clear();
+    OnSightStimulusEvent.Clear();
+    OnSightStimulusForgottenEvent.Clear();
+    OnHearingStimulusEvent.Clear();
+    OnHearingStimulusForgottenEvent.Clear();
+
+    // Clear perception data
     if (PerceptionComponent)
     {
+        PerceptionComponent->ForgetAll();
         PerceptionComponent->OnTargetPerceptionUpdated.RemoveAll(this);
         PerceptionComponent->OnTargetPerceptionForgotten.RemoveAll(this);
     }
@@ -141,11 +160,6 @@ void AMC_EnemyAIController::OnUnPossess()
 
     OwningCharacter = nullptr; // Clear the reference to the character
     AcquiredTarget = nullptr; // Clear the acquired target
-
-    SightConfig = nullptr;
-    HearingConfig = nullptr;
-    DamageConfig = nullptr;
-    PredictionConfig = nullptr;
 }
 
 /**
@@ -189,7 +203,6 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
     AActor* SensedActor = Actor;
     if (!SensedActor)
     {
-        // UE_LOG(LogTemp, Verbose, TEXT("Actor %s is not a valid actor."), *GetNameSafe(Actor));
         return;
     }
 
@@ -202,8 +215,13 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         if (Stimulus.WasSuccessfullySensed())
         {
             AcquiredTarget = SensedActor; // Update acquired target on damage
+            SendCombatEvent(FGameplayTag::RequestGameplayTag("MCS.StateTree.Events.Combat")); // Send event to StateTree
             OnDamageStimulusDetected(SensedActor, Stimulus);
             OnDamageStimulusEvent.Broadcast(SensedActor, Stimulus);
+        }
+        else
+        {
+            AcquiredTarget = nullptr; // Clear acquired target on forgetting
         }
     }
     else if (Stimulus.Type == SightID)
@@ -212,6 +230,7 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         if (Stimulus.WasSuccessfullySensed())
         {
             AcquiredTarget = SensedActor; // Update acquired target on sight
+            SendCombatEvent(FGameplayTag::RequestGameplayTag("MCS.StateTree.Events.Combat")); // Send event to StateTree
             OnSightStimulusDetected(SensedActor, Stimulus);
             OnSightStimulusEvent.Broadcast(SensedActor, Stimulus);
         }
@@ -228,6 +247,7 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
         if (Stimulus.WasSuccessfullySensed())
         {
             AcquiredTarget = SensedActor; // Update acquired target on hearing
+            SendCombatEvent(FGameplayTag::RequestGameplayTag("MCS.StateTree.Events.Combat")); // Send event to StateTree
             OnHearingStimulusDetected(SensedActor, Stimulus);
             OnHearingStimulusEvent.Broadcast(SensedActor, Stimulus);
         }
@@ -247,6 +267,9 @@ void AMC_EnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus
  */
 void AMC_EnemyAIController::OnTargetPerceptionForgotten(AActor* Actor)
 {
+    if (!Actor) return;
+    if (Actor == AcquiredTarget) AcquiredTarget = nullptr; // Clear the acquired target
+
     OnSightStimulusForgottenEvent.Broadcast(Actor);
     OnHearingStimulusForgottenEvent.Broadcast(Actor);
     OnSightStimulusForgotten(Actor); // Broadcast sight stimulus forgotten event
