@@ -24,6 +24,7 @@
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/OverlapResult.h"
 
 UMCS_TargetingSubsystem::UMCS_TargetingSubsystem()
 {
